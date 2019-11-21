@@ -1,17 +1,25 @@
 package com.juane.arduino.gpstracker.gps;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
+import com.google.android.gms.maps.model.LatLng;
+
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class GPSDirection {
+    private boolean isValid = false;
     private double longitude;
     private double latitude;
     private LocalDateTime date;
 
     public GPSDirection(String rawCoordinates){
-        parseRAWCoordinates(rawCoordinates);
+        if(rawCoordinates != null && !rawCoordinates.isEmpty()) {
+            parseRAWCoordinates(rawCoordinates);
+        }
     }
 
     public double distanciaCoord(GPSDirection other) {
@@ -29,23 +37,37 @@ public class GPSDirection {
         return distancia;
     }
 
-    private void parseRAWCoordinates(String RAWCoordinates){
-        String[] parsedArrayRAW = RAWCoordinates.split(",");
+    public double calculationByDistance(LatLng StartP, LatLng EndP) {
+        int Radius = 6371;// radius of earth in Km
+        double lat1 = StartP.latitude;
+        double lat2 = EndP.latitude;
+        double lon1 = StartP.longitude;
+        double lon2 = EndP.longitude;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2)
+                * Math.sin(dLon / 2);
+        double c = 2 * Math.asin(Math.sqrt(a));
+        double valueResult = Radius * c;
+        double km = valueResult / 1;
+        DecimalFormat newFormat = new DecimalFormat("####");
+        int kmInDec = Integer.valueOf(newFormat.format(km));
+        double meter = valueResult % 1000;
+        int meterInDec = Integer.valueOf(newFormat.format(meter));
+        Log.i("Radius Value", "" + valueResult + "   KM  " + kmInDec
+                + " Meter   " + meterInDec);
 
-        if(parsedArrayRAW.length > 0) {
-            this.latitude = Double.parseDouble(parsedArrayRAW[0]);
-            this.longitude = Double.parseDouble(parsedArrayRAW[1]);
-
-            String dateRaw = parsedArrayRAW[2];
-            this.date = parseDateRAW(dateRaw);
-        }
+        return Radius * c;
     }
 
-    private LocalDateTime parseDateRAW(String dateRaw) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        LocalDateTime dateTime = LocalDateTime.parse(dateRaw, formatter);
+    public boolean isEqual(GPSDirection other){
+        return this.date.isEqual(other.getDate());
+    }
 
-        return dateTime;
+    public boolean isValid(){
+        return isValid;
     }
 
     public double getLongitude() {
@@ -63,6 +85,29 @@ public class GPSDirection {
     @NonNull
     @Override
     public String toString() {
-        return "Longitude: " + longitude + "\nLatitude: " + latitude + "\nDate: " + date.toString();
+        return "\nLongitude: " + longitude + "\nLatitude: " + latitude + "\nDate: " + date.toString();
     }
+
+    private void parseRAWCoordinates(String RAWCoordinates){
+        String[] parsedArrayRAW = RAWCoordinates.split(",");
+
+        if(parsedArrayRAW.length > 2) {
+            this.latitude = Double.parseDouble(parsedArrayRAW[1]);
+            this.longitude = -Double.parseDouble(parsedArrayRAW[0]);
+
+            String dateRaw = parsedArrayRAW[2];
+            this.date = parseDateRAW(dateRaw);
+
+            this.isValid = true;
+        }
+    }
+
+    private LocalDateTime parseDateRAW(String dateRaw) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        LocalDateTime dateTime = LocalDateTime.parse(dateRaw, formatter);
+
+        return dateTime;
+    }
+
+
 }

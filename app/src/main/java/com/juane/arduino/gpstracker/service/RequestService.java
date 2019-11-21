@@ -67,21 +67,26 @@ public class RequestService extends Service {
         public void handleMessage(Message msg) {
             while (isRunning) {
                 try {
-                    if (fileOS.length() == 0 || lastDirection == null) { //first time read: read main file
+                    if (fileOS.length() == 0 || (lastDirection == null || !lastDirection.isValid())) { //first time read: read main file
                         Log.i(TAG, "Starting read..: ");
 
                         fo = new FileOutputStream(fileOS);
 
                         if (getRemoteGPSFile(fo)) {
-                            Log.i(TAG, "main file already read. Length: " + fileOS.length());
+                            Log.i(TAG, "main file read. Length: " + fileOS.length());
 
                             ReversedLinesFileReader reverseFileOs = new ReversedLinesFileReader(fileOS, Charset.defaultCharset());
 
-                            if ((lineAux = reverseFileOs.readLine()) != null) {
+                            while ((lineAux = reverseFileOs.readLine()) != null) {
                                 Log.i(TAG, "lineAux: " + lineAux);
                                 lastDirection = new GPSDirection(lineAux);
 
-                                Log.i(TAG, "Direction: " + lastDirection.toString());
+                                if (lastDirection.isValid()) {
+                                    Log.i(TAG, "Direction: " + lastDirection.toString());
+                                    break;
+                                } else {
+                                    Log.i(TAG, "Direction not valid..");
+                                }
                             }
                         }
                     } else { //next reads
@@ -97,24 +102,39 @@ public class RequestService extends Service {
                         if (getRemoteGPSFile(foAux)) {
                             Log.i(TAG, "main file already read. Length: " + fileOS.length());
                             Log.i(TAG, "second file aux readed. Length: " + fileOSAux.length());
-                        }
 
-                        // two files already read, compare and work.
-                        if (fileOS.length() != fileOSAux.length()) {
-                            Log.i(TAG, "They aren't equal!");
+                            ReversedLinesFileReader reverseFileOsAux = new ReversedLinesFileReader(fileOSAux, Charset.defaultCharset());
 
-                            ReversedLinesFileReader reverseFileOs = new ReversedLinesFileReader(fileOS, Charset.defaultCharset());
-
-                            if ((lineAux = reverseFileOs.readLine()) != null) {
+                            while ((lineAux = reverseFileOsAux.readLine()) != null) {
                                 Log.i(TAG, "lineAux: " + lineAux);
-                                lastDirection = new GPSDirection(lineAux);
+                                GPSDirection auxDirection = new GPSDirection(lineAux);
 
-                                Log.i(TAG, "Direction: " + lastDirection.toString());
+                                if (auxDirection.isValid()) {
+                                    Log.i(TAG, "Direction: " + lastDirection.toString());
+                                    Log.i(TAG, "Aux Direction: " + auxDirection.toString());
+
+                                    // two files already read, compare and work.
+                                    if (!lastDirection.isEqual(auxDirection)) {
+                                        Log.i(TAG, "They aren't equal!");
+                                        lastDirection = auxDirection;
+
+                                        Log.i(TAG, "Probando distancia: " + lastDirection.distanciaCoord(auxDirection));
+                                        if (lastDirection.distanciaCoord(auxDirection) > 0.15) {
+                                            Log.i(TAG, "MOVING!!!!");
+                                        }
+                                    } else {
+                                        Log.i(TAG, "They ARE equal!");
+                                        Log.i(TAG, "Probando distancia: " + lastDirection.distanciaCoord(auxDirection));
+                                    }
+
+                                    break;
+                                } else {
+                                    Log.i(TAG, "Aux Direction not valid..");
+                                }
                             }
-                        } else {
-                            Log.i(TAG, "They ARE equal!");
                         }
 
+// Update last direction
                         if (fileOS != null && fileOSAux != null) {
                             if (fileOS.delete()) {
                                 Files.copy(fileOSAux.toPath(), fileOS.toPath());
