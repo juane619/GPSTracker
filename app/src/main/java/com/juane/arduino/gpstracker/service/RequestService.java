@@ -78,16 +78,17 @@ public class RequestService extends Service {
                             ReversedLinesFileReader reverseFileOs = new ReversedLinesFileReader(fileOS, Charset.defaultCharset());
 
                             while ((lineAux = reverseFileOs.readLine()) != null) {
-                                Log.i(TAG, "lineAux: " + lineAux);
                                 lastDirection = new GPSDirection(lineAux);
 
                                 if (lastDirection.isValid()) {
-                                    Log.i(TAG, "Direction: " + lastDirection.toString());
+                                    //Log.i(TAG, "Direction: " + lastDirection.toString());
                                     break;
                                 } else {
-                                    Log.i(TAG, "Direction not valid..");
+                                    //Log.e(TAG, "Direction not valid..");
                                 }
                             }
+                        }else{
+                            Log.e(TAG ,"Problem reading main file..");
                         }
                     } else { //next reads
                         FileOutputStream foAux = null;
@@ -100,31 +101,27 @@ public class RequestService extends Service {
                         }
 
                         if (getRemoteGPSFile(foAux)) {
-                            Log.i(TAG, "main file already read. Length: " + fileOS.length());
+                            //Log.i(TAG, "main file already read. Length: " + fileOS.length());
                             Log.i(TAG, "second file aux readed. Length: " + fileOSAux.length());
 
                             ReversedLinesFileReader reverseFileOsAux = new ReversedLinesFileReader(fileOSAux, Charset.defaultCharset());
 
                             while ((lineAux = reverseFileOsAux.readLine()) != null) {
-                                Log.i(TAG, "lineAux: " + lineAux);
                                 GPSDirection auxDirection = new GPSDirection(lineAux);
 
                                 if (auxDirection.isValid()) {
-                                    Log.i(TAG, "Direction: " + lastDirection.toString());
-                                    Log.i(TAG, "Aux Direction: " + auxDirection.toString());
+//                                    Log.i(TAG, "Direction: " + lastDirection.toString());
+//                                    Log.i(TAG, "Aux Direction: " + auxDirection.toString());
 
                                     // two files already read, compare and work.
                                     if (!lastDirection.isEqual(auxDirection)) {
-                                        Log.i(TAG, "They aren't equal!");
-                                        lastDirection = auxDirection;
-
-                                        Log.i(TAG, "Probando distancia: " + lastDirection.distanciaCoord(auxDirection));
                                         if (lastDirection.distanciaCoord(auxDirection) > 0.15) {
                                             Log.i(TAG, "MOVING!!!!");
                                         }
+
+                                        lastDirection = auxDirection;
                                     } else {
-                                        Log.i(TAG, "They ARE equal!");
-                                        Log.i(TAG, "Probando distancia: " + lastDirection.distanciaCoord(auxDirection));
+                                        // Nothing if are equal..
                                     }
 
                                     break;
@@ -132,9 +129,11 @@ public class RequestService extends Service {
                                     Log.i(TAG, "Aux Direction not valid..");
                                 }
                             }
+                        }else{
+                            Log.e(TAG, "Problem reading aux file..");
                         }
 
-// Update last direction
+                        // Update last direction
                         if (fileOS != null && fileOSAux != null) {
                             if (fileOS.delete()) {
                                 Files.copy(fileOSAux.toPath(), fileOS.toPath());
@@ -168,7 +167,7 @@ public class RequestService extends Service {
 
     @Override
     public void onCreate() {
-        Log.i(TAG, "Request Service created..");
+        //Log.i(TAG, "Request Service created..");
 
         try {
             url = new URL(urlText);
@@ -177,9 +176,7 @@ public class RequestService extends Service {
                 fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
                 fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
 
-                if (fileOS.exists()) {
-                    Log.i(TAG, "File exists! " + fileOS.length());
-                } else {
+                if (!fileOS.exists()) {
                     Log.i(TAG, "File not exists! " + fileOS.getAbsolutePath());
 
                     if (fileOS.createNewFile()) {
@@ -188,8 +185,6 @@ public class RequestService extends Service {
                 }
 
                 if (fileOSAux.exists()) {
-                    Log.i(TAG, "File aux exists! " + fileOSAux.length());
-                } else {
                     Log.i(TAG, "File aux not exists! " + fileOSAux.getAbsolutePath());
 
                     if (fileOSAux.createNewFile()) {

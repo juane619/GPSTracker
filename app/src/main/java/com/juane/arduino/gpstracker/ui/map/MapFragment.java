@@ -54,7 +54,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onResume() {
         super.onResume();
-        Log.i(TAG, "Fragment resumed..");
+        //Log.i(TAG, "Fragment resumed..");
     }
 
     @Override
