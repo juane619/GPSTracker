@@ -26,9 +26,8 @@ public class GPSDirection {
         double va1 = Math.pow(sindLat, 2) + Math.pow(sindLng, 2)
                 * Math.cos(Math.toRadians(this.latitude)) * Math.cos(Math.toRadians(other.latitude));
         double va2 = 2 * Math.atan2(Math.sqrt(va1), Math.sqrt(1 - va1));
-        double distance = hearthRadius * va2;
 
-        return distance;
+        return hearthRadius * va2;
     }
 
     public boolean isEqual(GPSDirection other) {
@@ -75,9 +74,7 @@ public class GPSDirection {
 
     private LocalDateTime parseDateRAW(String dateRaw) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        LocalDateTime dateTime = LocalDateTime.parse(dateRaw, formatter);
-
-        return dateTime;
+        return LocalDateTime.parse(dateRaw, formatter);
     }
 
 

@@ -16,12 +16,11 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private NoSwipePager viewPager;
-    private BottomBarAdapter pagerAdapter;
-    BottomNavigationView navigation;
+    private BottomNavigationView navigation;
 
-    HomeFragment frag1 = new HomeFragment();
-    MapFragment frag2 = new MapFragment();
-    NotificationsFragment frag3 = new NotificationsFragment();
+    private HomeFragment frag1 = new HomeFragment();
+    private MapFragment frag2 = new MapFragment();
+    private NotificationsFragment frag3 = new NotificationsFragment();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         viewPager.setOffscreenPageLimit(3);
         viewPager.setPagingEnabled(false);
 
-        pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
+        BottomBarAdapter pagerAdapter = new BottomBarAdapter(getSupportFragmentManager());
 
         pagerAdapter.addFragments(frag1);
         pagerAdapter.addFragments(frag2);

@@ -30,7 +30,7 @@ public class HomeFragment extends Fragment {
 
     private ProgressBar pBarProgress;
 
-    Intent intentRequestService;
+    private Intent intentRequestService;
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -78,10 +78,12 @@ public class HomeFragment extends Fragment {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(alarmSwitch.isChecked()){
                     Log.i(TAG, "Switch alarm ON");
-                    getActivity().startService(intentRequestService);
+                    if(getActivity() != null)
+                        getActivity().startService(intentRequestService);
                 }else{
                     Log.i(TAG, "Switch alarm OFF");
-                    getActivity().stopService(intentRequestService);
+                    if(getActivity() != null)
+                        getActivity().stopService(intentRequestService);
                 }
             }
         });
@@ -92,8 +94,10 @@ public class HomeFragment extends Fragment {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
-                BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
-                navView.setSelectedItemId(R.id.tab2);
+                if(getActivity() != null) {
+                    BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
+                    navView.setSelectedItemId(R.id.tab2);
+                }
             }
         });
     }

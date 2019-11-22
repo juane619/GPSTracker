@@ -12,6 +12,8 @@ import android.os.Process;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -36,35 +38,34 @@ public class RequestService extends Service {
     private final static int TIME_SLEEP_SECONDS = 15;
     private final static int TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
 
-    // Thread
-    private Looper serviceLooper; //loop over tasks
     private ServiceHandler serviceHandler; //communicate with main thread
-    boolean isRunning = false;
+    private boolean isRunning = false;
 
     // Requests
-    private final String urlText = "http:/agrocarvajal.com/gps.txt";
-    URL url;
-    FileOutputStream fo = null;
-    private final String FILE_NAME = "readsgps.txt";
-    private final String FILE_NAME_AUX = "readsgps_aux.txt";
-    File fileOS = null;
-    File fileOSAux = null;
+    private static final String SOURCE_URL = "http:/agrocarvajal.com/gps.txt";
+    private static final String FILE_NAME = "readsgps.txt";
+    private static final String FILE_NAME_AUX = "readsgps_aux.txt";
+
+    private URL url;
+    private FileOutputStream fo = null;
+    private File fileOS = null;
+    private File fileOSAux = null;
 
     // manage GPS directions
-    GPSDirection lastDirection = null;
-    String lineAux = null;
+    private GPSDirection lastDirection = null;
+    private String lineAux = null;
 
     public RequestService() {
     }
 
     // Handler that receives messages from the thread
     private final class ServiceHandler extends Handler {
-        public ServiceHandler(Looper looper) {
+        ServiceHandler(Looper looper) {
             super(looper);
         }
 
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             while (isRunning) {
                 try {
                     if (fileOS.length() == 0 || (lastDirection == null || !lastDirection.isValid())) { //first time read: read main file
@@ -83,22 +84,13 @@ public class RequestService extends Service {
                                 if (lastDirection.isValid()) {
                                     //Log.i(TAG, "Direction: " + lastDirection.toString());
                                     break;
-                                } else {
-                                    //Log.e(TAG, "Direction not valid..");
                                 }
                             }
                         }else{
                             Log.e(TAG ,"Problem reading main file..");
                         }
                     } else { //next reads
-                        FileOutputStream foAux = null;
-
-                        if (foAux == null) {
-                            foAux = new FileOutputStream(fileOSAux);
-                        } else {
-                            foAux.close();
-                            foAux = new FileOutputStream(fileOSAux);
-                        }
+                        FileOutputStream foAux = new FileOutputStream(fileOSAux);
 
                         if (getRemoteGPSFile(foAux)) {
                             //Log.i(TAG, "main file already read. Length: " + fileOS.length());
@@ -120,8 +112,6 @@ public class RequestService extends Service {
                                         }
 
                                         lastDirection = auxDirection;
-                                    } else {
-                                        // Nothing if are equal..
                                     }
 
                                     break;
@@ -147,9 +137,6 @@ public class RequestService extends Service {
                 } catch (InterruptedException e) {
                     // Restore interrupt status.
                     Thread.currentThread().interrupt();
-                } catch (FileNotFoundException e) {
-                    Log.e(TAG, e.getLocalizedMessage());
-                    e.printStackTrace();
                 } catch (IOException e) {
                     Log.e(TAG, e.getLocalizedMessage());
                     e.printStackTrace();
@@ -170,11 +157,13 @@ public class RequestService extends Service {
         //Log.i(TAG, "Request Service created..");
 
         try {
-            url = new URL(urlText);
+            url = new URL(SOURCE_URL);
 
             if (isExternalDirectoryPresent()) {
-                fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
-                fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+                if(getExternalFilesDir(null) != null) {
+                    fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
+                    fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+                }
 
                 if (!fileOS.exists()) {
                     Log.i(TAG, "File not exists! " + fileOS.getAbsolutePath());
@@ -196,17 +185,13 @@ public class RequestService extends Service {
                 thread.start();
 
                 // Get the HandlerThread's Looper and use it for our Handler
-                serviceLooper = thread.getLooper();
+                // Thread
+                //loop over tasks
+                Looper serviceLooper = thread.getLooper();
                 serviceHandler = new ServiceHandler(serviceLooper);
             } else {
                 Log.e(TAG, "Not external storage!");
             }
-        } catch (MalformedURLException e) {
-            Log.e(TAG, e.getLocalizedMessage());
-            e.printStackTrace();
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, e.getLocalizedMessage());
-            e.printStackTrace();
         } catch (IOException e) {
             Log.e(TAG, e.getLocalizedMessage());
             e.printStackTrace();
@@ -307,7 +292,8 @@ public class RequestService extends Service {
             Log.e(TAG, "Download Error Exception " + e.getMessage());
             return false;
         } finally {
-            c.disconnect();
+            if(c != null)
+                c.disconnect();
         }
     }
 
