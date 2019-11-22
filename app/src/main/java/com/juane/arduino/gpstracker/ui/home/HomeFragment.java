@@ -64,9 +64,9 @@ public class HomeFragment extends Fragment {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(realTimeSwitch.isChecked()){
-                    Log.i(TAG, "Real Time alarm ON");
+                    Log.i(TAG, "Real Time ON");
                 }else{
-                    Log.i(TAG, "Real Time alarm OFF");
+                    Log.i(TAG, "Real Time OFF");
                 }
             }
         });
@@ -92,7 +92,6 @@ public class HomeFragment extends Fragment {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
-                Log.i(TAG, "Show location clicked!");
                 BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
                 navView.setSelectedItemId(R.id.tab2);
             }
