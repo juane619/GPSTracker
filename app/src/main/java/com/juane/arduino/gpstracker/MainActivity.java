@@ -13,7 +13,6 @@ import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 
 public class MainActivity extends AppCompatActivity {
-
     private static final String TAG = "MainActivity";
     private NoSwipePager viewPager;
     private BottomNavigationView navigation;
