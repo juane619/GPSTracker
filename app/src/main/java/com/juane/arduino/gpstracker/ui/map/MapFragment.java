@@ -1,7 +1,6 @@
 package com.juane.arduino.gpstracker.ui.map;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +21,7 @@ import com.juane.arduino.gpstracker.R;
 public class MapFragment extends Fragment implements OnMapReadyCallback {
     private static final String TAG = "MapFragment";
 
-    GoogleMap map;
+    private GoogleMap map;
     private MapViewModel mapViewModel;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -44,11 +43,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map1);
-        mapFragment.getMapAsync(this);
+        if(mapFragment != null)
+            mapFragment.getMapAsync(this);
     }
 
     @Override

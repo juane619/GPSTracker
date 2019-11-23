@@ -1,5 +1,6 @@
 package com.juane.arduino.gpstracker.pager;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
@@ -17,6 +18,7 @@ public class BottomBarAdapter extends SmartFragmentStatePagerAdapter {
         fragments.add(fragment);
     }
 
+    @NonNull
     @Override
     public Fragment getItem(int position) {
         return fragments.get(position);
