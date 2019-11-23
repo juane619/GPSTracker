@@ -21,13 +21,11 @@ import org.apache.commons.io.input.ReversedLinesFileReader;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -256,14 +254,18 @@ public class RequestService extends Service {
     }
 
     /**
-     * Returns true when request is done and the gps file in remote server is readed and false
+     * Returns true when request is done and the gps file in remote server is read and false
      * when HTTP request obtain a HTTP response indicating errors.
+     *
+     * @param fo Output param to save in output file of Android OS (might be a database)
+     *           the file read.
      *
      * @return boolean indicating the reading gps file process.
      */
     private boolean getRemoteGPSFile(FileOutputStream fo) {
         //create url and connect
         HttpURLConnection c = null;
+        boolean exitReading = true;
 
         try {
             c = (HttpURLConnection) url.openConnection();
@@ -276,16 +278,22 @@ public class RequestService extends Service {
                 Log.e(TAG, "Server returned HTTP " + c.getResponseCode()
                         + " " + c.getResponseMessage());
 
-                return false;
+                exitReading = false;
             }
 
             InputStream is = new BufferedInputStream(c.getInputStream());//Get InputStream for connection
-            readStream(is, fo);
+
+            if(is.available() > 0) {
+                readStream(is, fo);
+            }else{
+                exitReading = false;
+            }
 
             if (fo != null) {
                 fo.close();
             }
-            return true;
+
+            return exitReading;
         } catch (IOException e) {
             //Read exception if something went wrong
             e.printStackTrace();
@@ -297,6 +305,14 @@ public class RequestService extends Service {
         }
     }
 
+    /**
+     * From input stream (as Input Stream of HTTP Connection) transfer its data to FileOutputStream fo.
+     *
+     * @param is Input param pointing to resource (as HTTP Connection) to read from it.
+     * @param fo Output param to save in output file of Android OS (might be a database)
+     *          the file read.
+     *
+     */
     private void readStream(InputStream is, FileOutputStream fo) {
         byte[] buffer = new byte[1024];//Set buffer type
         int len1;//init length
@@ -310,7 +326,7 @@ public class RequestService extends Service {
             is.close();
         } catch (IOException e) {
             e.printStackTrace();
-            Log.e(TAG, "Download Error Exception " + e.getMessage());
+            Log.e(TAG, "Read Error Exception " + e.getMessage());
         }
     }
 }
