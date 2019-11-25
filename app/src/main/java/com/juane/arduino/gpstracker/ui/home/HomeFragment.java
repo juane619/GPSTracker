@@ -24,6 +24,8 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.preference.EditTextPreference;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.juane.arduino.gpstracker.R;
@@ -149,7 +151,8 @@ public class HomeFragment extends Fragment {
 
                     if (getActivity() != null && !RequestService.isRunning()) {
                         if(doBindService()) { //bind service to fragment
-
+//                            SettingsFragment s = (SettingsFragment) getFragmentManager().findFragmentById(R.id.)
+//                            EditTextPreference serverNamePref = (EditTextPreference) PreferenceManager.getDefaultSharedPreferences(getContext())..getString(R.string.key_url));
                         }
                     }
                 } else {
