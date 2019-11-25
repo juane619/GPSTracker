@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -147,7 +148,9 @@ public class HomeFragment extends Fragment {
                     Log.i(TAG, "Switch alarm ON");
 
                     if (getActivity() != null && !RequestService.isRunning()) {
-                        doBindService(); //bind service to fragment
+                        if(doBindService()) { //bind service to fragment
+
+                        }
                     }
                 } else {
                     Log.i(TAG, "Switch alarm OFF");
@@ -185,15 +188,15 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    void doBindService() {
+    private boolean doBindService() {
         if (mIsBound == false) {
-            getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE); //previous ServiceConnection to detect the service activity
-            mIsBound = true;
+            mIsBound = getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE); //previous ServiceConnection to detect the service activity
             Log.i(TAG, "Binding..");
         }
+        return mIsBound;
     }
 
-    void doUnbindService() {
+    private void doUnbindService() {
         if (mIsBound) {
             // If we have received the service, and hence registered with it, then now is the time to unregister.
             if (mService != null) {

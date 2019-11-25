@@ -86,13 +86,6 @@ public class RequestService extends Service {
                 Message msgAux = serviceHandler.obtainMessage();
                 msgAux.what = MSG_START_REQUEST;
 
-//                try {
-//                    if(mClient != null)
-//                        mClient.send(msgAux);
-//                } catch (RemoteException e) {
-//                    e.printStackTrace();
-//                }
-
                 if(serviceHandler.sendMessage(msgAux)){
                     Log.i(TAG, "Starting request to obtain gps data..");
                 }
