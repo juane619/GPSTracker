@@ -1,5 +1,6 @@
 package com.juane.arduino.gpstracker.ui.settings;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -46,14 +47,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private Preference.OnPreferenceChangeListener listener = new Preference.OnPreferenceChangeListener() {
         @Override
         public boolean onPreferenceChange(Preference preference, Object newValue) {
-            String oldValue = PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), "");
+            //String oldValue = PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), "");
             String stringValue = newValue.toString();
             parametersEmpty = false;
 
             if (stringValue.isEmpty()) {
                 Utils.showInvalidParameterDialog(getActivity(), null);
-
                 parametersEmpty = true;
+                preference.setSummary(stringValue);
             } else {
                 if (preference instanceof ListPreference) {
                     ListPreference listPreference = (ListPreference) preference;
@@ -61,11 +62,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
                 } else if (preference instanceof EditTextPreference) {
                     if (preference.getKey().equals(getResources().getString(R.string.key_url))) { //URL
+                        preference.setSummary(stringValue);
                         // validate URL
                         try {
                             isURLValidated = true;
                             URL url = new URL(stringValue);
-                            preference.setSummary(stringValue);
                         } catch (MalformedURLException e) {
                             //e.printStackTrace();
                             Log.e(TAG, "Malformed URL..");
