@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProviders;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.service.RequestService;
+import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
@@ -44,13 +45,14 @@ public class HomeFragment extends Fragment {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            Log.i(TAG, "RECIBIENDO MENSAJE DEL SERVICE");
+            Log.i(TAG, "RECIBIENDO MENSAJE DEL SERVICE..");
 
             switch (msg.what) {
-                case RequestService.MSG_PROBLEM_STARTING:
+                case RequestService.MSG_PROBLEM_STOP:
                     alarmSwitch.setChecked(false);
-                    Toast.makeText(getContext(), "URL malformed..", Toast.LENGTH_SHORT).show();
                     break;
+                case RequestService.MSG_SENDING_LOCATION:
+                    Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
                 default:
                     super.handleMessage(msg);
             }
@@ -60,15 +62,14 @@ public class HomeFragment extends Fragment {
     private ServiceConnection mConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
-            Toast.makeText(getActivity(), "Attached..", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getActivity(), "Attached..", Toast.LENGTH_SHORT).show();
 
             try {
-                Message msg = Message.obtain(null, RequestService.MSG_PROBLEM_STARTING);
-                msg.arg2 = 7878;
+                Message msg = Message.obtain(null, RequestService.MSG_PROBLEM_STOP);
+                msg.arg2 = 7878; // Enviando peticion de registro al servicio
                 msg.replyTo = mMessenger;
                 mService.send(msg);
-            }
-            catch (RemoteException e) {
+            } catch (RemoteException e) {
                 // In this case the service has crashed before we could even do anything with it
             }
         }
@@ -97,8 +98,6 @@ public class HomeFragment extends Fragment {
         setRealTimeSwitch();
         setShowLocationButton();
 
-
-
         return root;
     }
 
@@ -107,9 +106,9 @@ public class HomeFragment extends Fragment {
         realTimeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(realTimeSwitch.isChecked()){
+                if (realTimeSwitch.isChecked()) {
                     Log.i(TAG, "Real Time ON");
-                }else{
+                } else {
                     Log.i(TAG, "Real Time OFF");
                 }
             }
@@ -120,15 +119,18 @@ public class HomeFragment extends Fragment {
         alarmSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(alarmSwitch.isChecked()){
+                if (alarmSwitch.isChecked()) {
                     Log.i(TAG, "Switch alarm ON");
-                    if(getActivity() != null && !RequestService.isRunning()) {
+                    if (getActivity() != null && !RequestService.isRunning()) {
+                        doBindService();
                         getActivity().startService(intentRequestService);
                     }
-                }else{
+                } else {
                     Log.i(TAG, "Switch alarm OFF");
-                    //if(getActivity() != null && RequestService.isRunning())
+                    if (getActivity() != null && RequestService.isRunning()) {
+                        doUnbindService();
                         getActivity().stopService(intentRequestService);
+                    }
                 }
             }
         });
@@ -139,7 +141,7 @@ public class HomeFragment extends Fragment {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
-                if(getActivity() != null) {
+                if (getActivity() != null) {
                     BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
                     navView.setSelectedItemId(R.id.tab2);
                 }
@@ -148,9 +150,11 @@ public class HomeFragment extends Fragment {
     }
 
     void doBindService() {
-        getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE);
-        mIsBound = true;
-        Log.i(TAG, "Binding..");
+        if (mIsBound == false) {
+            getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE);
+            mIsBound = true;
+            Log.i(TAG, "Binding..");
+        }
     }
 
     void doUnbindService() {
@@ -161,8 +165,7 @@ public class HomeFragment extends Fragment {
                     Message msg = Message.obtain(null, 4646, 4646);
                     msg.replyTo = mMessenger;
                     mService.send(msg);
-                }
-                catch (RemoteException e) {
+                } catch (RemoteException e) {
                     // There is nothing special we need to do if the service has crashed.
                 }
             }
@@ -174,13 +177,27 @@ public class HomeFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        Log.i(TAG, "Fragment resumed..");
+        if (!SettingsFragment.isSettingsValidated()) {
+            alarmSwitch.setEnabled(false);
+            realTimeSwitch.setEnabled(false);
+            showLocationButton.setEnabled(false);
+        } else {
+            alarmSwitch.setEnabled(true);
+            realTimeSwitch.setEnabled(true);
+            showLocationButton.setEnabled(true);
+        }
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
 
         try {
             doUnbindService();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             Log.e(TAG, "Failed to unbind from the service", t);
         }
     }

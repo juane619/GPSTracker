@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,6 +11,7 @@
             android:dialogTitle="Set URL from server to read GPS data"
             android:inputType="text"
             android:key="@string/key_url"
+            android:defaultValue="http://www.prueba.com/gpsfile.txt"
             android:summary="Server URL to read GPS data"
             android:title="Server URL" />
         <EditTextPreference
@@ -25,6 +27,10 @@
             android:key="@string/key_intervalTime"
             android:summary="Time interval to read from server"
             android:title="Time interval" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="notifications_settings"
+        android:title="NOTIFICATIONS">
         <EditTextPreference
             android:dialogTitle="Set phone number"
             android:inputType="number"
@@ -32,10 +38,10 @@
             android:summary="Notifications phone number"
             android:title="Phone number" />
         <EditTextPreference
-            android:dialogTitle="Select message to notify by Whatshapp"
+            android:dialogTitle="Select message to notify by Whatsapp"
             android:inputType="text"
             android:key="@string/key_message"
-            android:summary="Message to notify by Whatshapp"
+            android:summary="Message to notify by Whatsapp"
             android:title="Notification message" />
     </PreferenceCategory>
 </PreferenceScreen>

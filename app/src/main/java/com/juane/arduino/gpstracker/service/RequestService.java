@@ -36,7 +36,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 
 public class RequestService extends Service {
-    public static final int MSG_PROBLEM_STARTING = 1;
+    public static final int MSG_PROBLEM_STOP = 1;
+    public static final int MSG_SENDING_LOCATION = 2;
     private static final String TAG = "Request Service";
 
     private int TIME_SLEEP_SECONDS = 5;
@@ -76,13 +77,15 @@ public class RequestService extends Service {
 
         @Override
         public void handleMessage(@NonNull Message msg) {
-            if(msg.arg2 != 999) {
-                Log.i(TAG, "RECIBIENDO MENSAJE DEL INTENT PARA REGISTRAR..: " + msg.arg2);
-                mClient = msg.replyTo;
-            }else{
-                double considerateDistance = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getFloat("distance_value", (float) 0.15);
+            Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT..: " + msg.arg2);
 
-                Log.i(TAG, "DISTANCE: " + considerateDistance);
+            if(msg.arg2 == 7878) {
+                Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT PARA REGISTRAR..: " + msg.arg2);
+                mClient = msg.replyTo;
+            }else if(msg.arg2 == 999){
+                double considerateDistance = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("distance_value", "0.15"));
+
+                Log.i(TAG, "DISTANCE in service: " + considerateDistance);
 
                 while (isRunning) {
                     try {
@@ -120,6 +123,13 @@ public class RequestService extends Service {
                                     GPSDirection auxDirection = new GPSDirection(lineAux);
 
                                     if (auxDirection.isValid()) {
+                                        try {
+                                            if(mClient != null) {
+                                                mClient.send(Message.obtain(null, MSG_SENDING_LOCATION, 25, 25));
+                                            }
+                                        } catch (RemoteException ex) {
+                                            ex.printStackTrace();
+                                        }
 //                                    Log.i(TAG, "Direction: " + lastDirection.toString());
 //                                    Log.i(TAG, "Aux Direction: " + auxDirection.toString());
 
@@ -174,7 +184,6 @@ public class RequestService extends Service {
     public void onCreate() {
         HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
-
         // Get the HandlerThread's Looper and use it for our Handler
         // Thread
         //loop over tasks
@@ -190,42 +199,30 @@ public class RequestService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         TIME_SLEEP_SECONDS = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("interval_time", "5"));
         TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
-        Log.i(TAG, "SECONDS: " + TIME_SLEEP_SECONDS);
+        Log.i(TAG, "SECONDS in service: " + TIME_SLEEP_SECONDS);
         SOURCE_URL = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("url_text", "http://prueba.com/gps.txt"); //"http:/agrocarvajal.com/gps.txt"
 
+        // from URL read gps file
         try {
-            url = new URL(SOURCE_URL);
+            url = new URL(SOURCE_URL); //URL already validated in settings
             Log.i(TAG, "SOURCE_URL: " + SOURCE_URL);
-
-            String FILE_NAME = this.getResources().getString(R.string.path_main_filegps);
-            String FILE_NAME_AUX = this.getResources().getString((R.string.path_auxfilegps));
-
-            if(getExternalFilesDir(null) != null) {
-                fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
-                fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
-            }
         } catch (IOException e) {
-            if(e instanceof MalformedURLException){
-                Log.e(TAG, "URL malformed..");
-                //Toast.makeText(this, "URL malformed..", Toast.LENGTH_SHORT).show();
-            }
-
-            if(serviceHandler != null){
-                try {
-                    mClient.send(Message.obtain(null, MSG_PROBLEM_STARTING, 97, 98));
-                } catch (RemoteException ex) {
-                    ex.printStackTrace();
-                }
-            }
-
-            Log.e(TAG, e.getLocalizedMessage());
-            //e.printStackTrace();
-            stopSelf();
-
-            return START_STICKY;
+                Log.e(TAG, e.getLocalizedMessage());
         }
+
+        //once URL is assigned, and files to store gps data are created  start service
+        String FILE_NAME = this.getResources().getString(R.string.path_main_filegps);
+        String FILE_NAME_AUX = this.getResources().getString((R.string.path_auxfilegps));
+
+        if(getExternalFilesDir(null) != null) {
+            fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
+            fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+        }
+
         // For each start request, send a message to start a job and deliver the
         // start ID so we know which request we're stopping when we finish the job
+
+        //When previous resources are avalaible, service start
         if(serviceHandler != null) {
             Toast.makeText(this, "Request Service starting..", Toast.LENGTH_SHORT).show();
 
@@ -233,7 +230,7 @@ public class RequestService extends Service {
 
             Message msg = serviceHandler.obtainMessage();
             msg.arg1 = startId;
-            msg.arg2 = 999;
+            msg.arg2 = 999; //ID to identify normal service start
             serviceHandler.sendMessage(msg);
         }
 
@@ -257,26 +254,6 @@ public class RequestService extends Service {
         super.onDestroy();
     }
 
-
-
-    private StringBuilder readFile(File file) {
-        StringBuilder text = new StringBuilder();
-        try {
-
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            String line;
-            while ((line = br.readLine()) != null) {
-                text.append(line);
-                text.append('\n');
-                //Log.i(TAG, line + '\n');
-            }
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return text;
-    }
 
     /**
      * Returns true when request is done and the gps file in remote server is read and false
@@ -321,7 +298,7 @@ public class RequestService extends Service {
             return exitReading;
         } catch (IOException e) {
             //Read exception if something went wrong
-            e.printStackTrace();
+            //e.printStackTrace();
             Log.e(TAG, "Download Error Exception " + e.getMessage());
             return false;
         } finally {

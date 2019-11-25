@@ -1,22 +1,8 @@
 package com.juane.arduino.gpstracker.ui.settings;
 
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
-import android.preference.RingtonePreference;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProviders;
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
@@ -24,12 +10,20 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.utils.Utils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Objects;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
-
+    private static final String TAG = "SettingsFragment";
     private SettingsViewModel settingsViewModel;
+
+    private static boolean isURLValidated = false;
+    private static boolean isDistanceValidated = false;
+    private static boolean isMobileValidated = false;
+    private static boolean parametersEmpty = false;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -42,27 +36,68 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message))));
     }
 
-    private static void bindSummaryValue(Preference preference){
+    private void bindSummaryValue(Preference preference) {
         preference.setOnPreferenceChangeListener(listener);
 
         listener.onPreferenceChange(preference,
                 PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
     }
 
-    private static Preference.OnPreferenceChangeListener listener = new Preference.OnPreferenceChangeListener() {
+    private Preference.OnPreferenceChangeListener listener = new Preference.OnPreferenceChangeListener() {
         @Override
         public boolean onPreferenceChange(Preference preference, Object newValue) {
+            String oldValue = PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), "");
             String stringValue = newValue.toString();
+            parametersEmpty = false;
 
-            if(preference instanceof ListPreference){
-                ListPreference listPreference = (ListPreference) preference;
-                int index = listPreference.findIndexOfValue(stringValue);
-                preference.setSummary(index >= 0 ? listPreference.getEntries()[index]:null);
-            } else if(preference instanceof EditTextPreference){
-                preference.setSummary(stringValue);
-            }
+            if (stringValue.isEmpty()) {
+                Utils.showInvalidParameterDialog(getActivity(), null);
+
+                parametersEmpty = true;
+            } else {
+                if (preference instanceof ListPreference) {
+                    ListPreference listPreference = (ListPreference) preference;
+                    int index = listPreference.findIndexOfValue(stringValue);
+                    preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
+                } else if (preference instanceof EditTextPreference) {
+                    if (preference.getKey().equals(getResources().getString(R.string.key_url))) { //URL
+                        // validate URL
+                        try {
+                            isURLValidated = true;
+                            URL url = new URL(stringValue);
+                            preference.setSummary(stringValue);
+                        } catch (MalformedURLException e) {
+                            //e.printStackTrace();
+                            Log.e(TAG, "Malformed URL..");
+                            isURLValidated = false;
+                            Utils.showInvalidParameterDialog(getActivity(),  "URL");
+                        }
+                    } else if (preference.getKey().equals(getResources().getString(R.string.key_phone))) { //PHONE
+                        preference.setSummary(stringValue);
+                        isMobileValidated = true;
+
+                        if (stringValue.isEmpty() || !Utils.isValidMobile(stringValue)) {
+                            Log.e(TAG, "Invalid mobile phone..");
+                            isMobileValidated = false;
+                            Utils.showInvalidParameterDialog(getActivity(), "mobile phone");
+                        }
+                    }
+                    if (preference.getKey().equals(getResources().getString(R.string.key_distance))) { //DISTANCE
+                        preference.setSummary(stringValue);
+                        isDistanceValidated = true;
+
+                        if (!Utils.isValidMobile(stringValue)) {
+                            if (stringValue.isEmpty() || Double.parseDouble(stringValue) < 0) {
+                                Log.e(TAG, "Invalid distance..");
+                                isDistanceValidated = false;
+                                Utils.showInvalidParameterDialog(getActivity(), "distance");
+                            }
+                        }
+                    }
+                }
+
 //            else if(preference instanceof RingtonePreference){
-//                if(stringValue.isEmpty()) {
+//                if(stringValue.parametersEmpty()) {
 //                    preference.setSummary("Silent");
 //                }else{
 //                    Ringtone ringtone = RingtoneManager.getRingtone(preference.getContext(), Uri.parse(stringValue));
@@ -74,7 +109,12 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 //                    }
 //                }
 //            }
+            }
             return true;
         }
     };
+
+    public static boolean isSettingsValidated() {
+        return !parametersEmpty && isDistanceValidated && isURLValidated && isMobileValidated;
+    }
 }

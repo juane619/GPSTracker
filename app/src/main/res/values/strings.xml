@@ -13,4 +13,7 @@
     <string name="key_message">message_text</string>
     <string name="path_main_filegps">readsgps.txt</string>
     <string name="path_auxfilegps">readsgps_aux.txt</string>
+    <string name="dialog_message_validate_parameter">Choose other value for parameter</string>
+    <string name="dialog_title_validate_parameter">Invalid value of parameter</string>
+    <string name="button_dialog_ok">Ok</string>
 </resources>
