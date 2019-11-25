@@ -23,14 +23,11 @@ import com.juane.arduino.gpstracker.gps.GPSDirection;
 import org.apache.commons.io.input.ReversedLinesFileReader;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -38,6 +35,9 @@ import java.nio.file.Files;
 public class RequestService extends Service {
     public static final int MSG_PROBLEM_STOP = 1;
     public static final int MSG_SENDING_LOCATION = 2;
+    public static final int MSG_START_REQUEST = 3;
+    public static final int MSG_REGISTER_CLIENT = 4;
+    public static final int MSG_UNREGISTER_CLIENT = 5;
     private static final String TAG = "Request Service";
 
     private int TIME_SLEEP_SECONDS = 5;
@@ -77,15 +77,31 @@ public class RequestService extends Service {
 
         @Override
         public void handleMessage(@NonNull Message msg) {
-            Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT..: " + msg.arg2);
+            //Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT..: " + msg.arg2);
 
-            if(msg.arg2 == 7878) {
-                Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT PARA REGISTRAR..: " + msg.arg2);
+            if (msg.what == MSG_REGISTER_CLIENT) {
+                //Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT PARA REGISTRAR..: " + msg.arg2);
                 mClient = msg.replyTo;
-            }else if(msg.arg2 == 999){
-                double considerateDistance = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("distance_value", "0.15"));
 
-                Log.i(TAG, "DISTANCE in service: " + considerateDistance);
+                Message msgAux = serviceHandler.obtainMessage();
+                msgAux.what = MSG_START_REQUEST;
+
+//                try {
+//                    if(mClient != null)
+//                        mClient.send(msgAux);
+//                } catch (RemoteException e) {
+//                    e.printStackTrace();
+//                }
+
+                if(serviceHandler.sendMessage(msgAux)){
+                    Log.i(TAG, "Starting request to obtain gps data..");
+                }
+
+            } else if (msg.what == MSG_START_REQUEST) {
+                Log.i(TAG, "Starting obtain gps data..");
+
+                double considerateDistance = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("distance_value", "0.15"));
+                //Log.i(TAG, "DISTANCE in service: " + considerateDistance);
 
                 while (isRunning) {
                     try {
@@ -109,6 +125,13 @@ public class RequestService extends Service {
                                 }
                             } else {
                                 Log.e(TAG, "Problem reading main file..");
+
+                                if (mClient != null) {
+                                    Toast.makeText(getApplicationContext(), "Problem with server URL..", Toast.LENGTH_SHORT).show();
+                                    mClient.send(Message.obtain(null, MSG_PROBLEM_STOP));
+                                }
+
+                                break;
                             }
                         } else { //next reads
                             FileOutputStream foAux = new FileOutputStream(fileOSAux);
@@ -124,7 +147,7 @@ public class RequestService extends Service {
 
                                     if (auxDirection.isValid()) {
                                         try {
-                                            if(mClient != null) {
+                                            if (mClient != null) {
                                                 mClient.send(Message.obtain(null, MSG_SENDING_LOCATION, 25, 25));
                                             }
                                         } catch (RemoteException ex) {
@@ -149,6 +172,12 @@ public class RequestService extends Service {
                                 }
                             } else {
                                 Log.e(TAG, "Problem reading aux file..");
+
+                                if (mClient != null) {
+                                    mClient.send(Message.obtain(null, MSG_PROBLEM_STOP));
+                                }
+
+                                break;
                             }
 
                             // Update last direction
@@ -168,14 +197,50 @@ public class RequestService extends Service {
                     } catch (IOException e) {
                         Log.e(TAG, e.getLocalizedMessage());
                         e.printStackTrace();
+                    } catch (RemoteException e) {
+                        //e.printStackTrace();
+                        Log.e(TAG, e.getLocalizedMessage());
                     }
                 }
+            }else if(msg.what == MSG_UNREGISTER_CLIENT) {
+                Log.i(TAG, "Unregistering client..");
+                mClient = null;
             }
         }
     }
 
     @Override
     public IBinder onBind(Intent intent) {
+        TIME_SLEEP_SECONDS = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("interval_time", "5"));
+        TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
+        Log.i(TAG, "SECONDS in service: " + TIME_SLEEP_SECONDS);
+        SOURCE_URL = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("url_text", "http://prueba.com/gps.txt"); //"http:/agrocarvajal.com/gps.txt"
+
+        // from URL read gps file
+        try {
+            url = new URL(SOURCE_URL); //URL already validated in settings
+            Log.i(TAG, "SOURCE_URL: " + SOURCE_URL);
+        } catch (IOException e) {
+            Log.e(TAG, e.getLocalizedMessage());
+        }
+
+        //once URL is assigned, and files to store gps data are created  start service
+        String FILE_NAME = this.getResources().getString(R.string.path_main_filegps);
+        String FILE_NAME_AUX = this.getResources().getString((R.string.path_auxfilegps));
+
+        if (getExternalFilesDir(null) != null) {
+            fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
+            fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+        }
+
+        // For each start request, send a message to start a job and deliver the
+        // start ID so we know which request we're stopping when we finish the job
+
+        //When previous resources are avalaible, service start
+        Toast.makeText(this, "Request Service starting..", Toast.LENGTH_SHORT).show();
+
+        isRunning = true;
+
         // TODO: Return the communication channel to the service.
         return mMessenger.getBinder();
     }
@@ -195,48 +260,53 @@ public class RequestService extends Service {
         Log.i(TAG, "Request Service created..");
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        TIME_SLEEP_SECONDS = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("interval_time", "5"));
-        TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
-        Log.i(TAG, "SECONDS in service: " + TIME_SLEEP_SECONDS);
-        SOURCE_URL = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("url_text", "http://prueba.com/gps.txt"); //"http:/agrocarvajal.com/gps.txt"
-
-        // from URL read gps file
-        try {
-            url = new URL(SOURCE_URL); //URL already validated in settings
-            Log.i(TAG, "SOURCE_URL: " + SOURCE_URL);
-        } catch (IOException e) {
-                Log.e(TAG, e.getLocalizedMessage());
-        }
-
-        //once URL is assigned, and files to store gps data are created  start service
-        String FILE_NAME = this.getResources().getString(R.string.path_main_filegps);
-        String FILE_NAME_AUX = this.getResources().getString((R.string.path_auxfilegps));
-
-        if(getExternalFilesDir(null) != null) {
-            fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
-            fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
-        }
-
-        // For each start request, send a message to start a job and deliver the
-        // start ID so we know which request we're stopping when we finish the job
-
-        //When previous resources are avalaible, service start
-        if(serviceHandler != null) {
-            Toast.makeText(this, "Request Service starting..", Toast.LENGTH_SHORT).show();
-
-            isRunning = true;
-
-            Message msg = serviceHandler.obtainMessage();
-            msg.arg1 = startId;
-            msg.arg2 = 999; //ID to identify normal service start
-            serviceHandler.sendMessage(msg);
-        }
-
-        // If we get killed, after returning from here, restart
-        return START_STICKY;
-    }
+//    @Override
+//    public int onStartCommand(Intent intent, int flags, int startId) {
+//        TIME_SLEEP_SECONDS = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("interval_time", "5"));
+//        TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
+//        Log.i(TAG, "SECONDS in service: " + TIME_SLEEP_SECONDS);
+//        SOURCE_URL = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("url_text", "http://prueba.com/gps.txt"); //"http:/agrocarvajal.com/gps.txt"
+//
+//        // from URL read gps file
+//        try {
+//            url = new URL(SOURCE_URL); //URL already validated in settings
+//            Log.i(TAG, "SOURCE_URL: " + SOURCE_URL);
+//        } catch (IOException e) {
+//            Log.e(TAG, e.getLocalizedMessage());
+//        }
+//
+//        //once URL is assigned, and files to store gps data are created  start service
+//        String FILE_NAME = this.getResources().getString(R.string.path_main_filegps);
+//        String FILE_NAME_AUX = this.getResources().getString((R.string.path_auxfilegps));
+//
+//        if (getExternalFilesDir(null) != null) {
+//            fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
+//            fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+//        }
+//
+//        // For each start request, send a message to start a job and deliver the
+//        // start ID so we know which request we're stopping when we finish the job
+//
+//        //When previous resources are avalaible, service start
+//        if (serviceHandler != null) {
+//            Toast.makeText(this, "Request Service starting..", Toast.LENGTH_SHORT).show();
+//
+//            isRunning = true;
+//
+//            Message msg = serviceHandler.obtainMessage();
+//            msg.what = MSG_START_REQUEST;
+//
+//            try {
+//                if (mClient != null)
+//                    mClient.send(msg);
+//            } catch (RemoteException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//        // If we get killed, after returning from here, restart
+//        return START_STICKY;
+//    }
 
     @Override
     public void onDestroy() {
@@ -261,7 +331,6 @@ public class RequestService extends Service {
      *
      * @param fo Output param to save in output file of Android OS (might be a database)
      *           the file read.
-     *
      * @return boolean indicating the reading gps file process.
      */
     private boolean getRemoteGPSFile(FileOutputStream fo) {
@@ -286,7 +355,7 @@ public class RequestService extends Service {
             InputStream is = new BufferedInputStream(c.getInputStream());//Get InputStream for connection
 
 //            if(is.available() > 0) {
-                readStream(is, fo);
+            readStream(is, fo);
 //            }else{
 //                exitReading = false;
 //            }
@@ -302,7 +371,7 @@ public class RequestService extends Service {
             Log.e(TAG, "Download Error Exception " + e.getMessage());
             return false;
         } finally {
-            if(c != null)
+            if (c != null)
                 c.disconnect();
         }
     }
@@ -312,8 +381,7 @@ public class RequestService extends Service {
      *
      * @param is Input param pointing to resource (as HTTP Connection) to read from it.
      * @param fo Output param to save in output file of Android OS (might be a database)
-     *          the file read.
-     *
+     *           the file read.
      */
     private void readStream(InputStream is, FileOutputStream fo) {
         byte[] buffer = new byte[1024];//Set buffer type

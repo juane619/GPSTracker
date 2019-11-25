@@ -45,7 +45,7 @@ public class HomeFragment extends Fragment {
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            Log.i(TAG, "RECIBIENDO MENSAJE DEL SERVICE..");
+            //Log.i(TAG, "RECIBIENDO MENSAJE DEL SERVICE..");
 
             switch (msg.what) {
                 case RequestService.MSG_PROBLEM_STOP:
@@ -53,6 +53,20 @@ public class HomeFragment extends Fragment {
                     break;
                 case RequestService.MSG_SENDING_LOCATION:
                     Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
+                    break;
+                case RequestService.MSG_START_REQUEST:
+                    Log.i(TAG, "REQUEST TO START..");
+
+                    if (mService != null) {
+                        try {
+                            Message msgAux = Message.obtain(null, RequestService.MSG_START_REQUEST, "Start request to gps server");
+                            msgAux.replyTo = mMessenger;
+                            mService.send(msgAux);
+                        } catch (RemoteException e) {
+                            // There is nothing special we need to do if the service has crashed.
+                        }
+                    }
+                    break;
                 default:
                     super.handleMessage(msg);
             }
@@ -65,8 +79,7 @@ public class HomeFragment extends Fragment {
             //Toast.makeText(getActivity(), "Attached..", Toast.LENGTH_SHORT).show();
 
             try {
-                Message msg = Message.obtain(null, RequestService.MSG_PROBLEM_STOP);
-                msg.arg2 = 7878; // Enviando peticion de registro al servicio
+                Message msg = Message.obtain(null, RequestService.MSG_REGISTER_CLIENT);
                 msg.replyTo = mMessenger;
                 mService.send(msg);
             } catch (RemoteException e) {
@@ -92,88 +105,12 @@ public class HomeFragment extends Fragment {
         showLocationButton = root.findViewById(R.id.showLocationButton);
 
         intentRequestService = new Intent(getActivity(), RequestService.class);
-        doBindService();
 
         setAlarmSwitch();
         setRealTimeSwitch();
         setShowLocationButton();
 
         return root;
-    }
-
-
-    private void setRealTimeSwitch() {
-        realTimeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (realTimeSwitch.isChecked()) {
-                    Log.i(TAG, "Real Time ON");
-                } else {
-                    Log.i(TAG, "Real Time OFF");
-                }
-            }
-        });
-    }
-
-    private void setAlarmSwitch() {
-        alarmSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (alarmSwitch.isChecked()) {
-                    Log.i(TAG, "Switch alarm ON");
-                    if (getActivity() != null && !RequestService.isRunning()) {
-                        doBindService();
-                        getActivity().startService(intentRequestService);
-                    }
-                } else {
-                    Log.i(TAG, "Switch alarm OFF");
-                    if (getActivity() != null && RequestService.isRunning()) {
-                        doUnbindService();
-                        getActivity().stopService(intentRequestService);
-                    }
-                }
-            }
-        });
-    }
-
-    private void setShowLocationButton() {
-        showLocationButton.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("ResourceType")
-            @Override
-            public void onClick(View v) {
-                if (getActivity() != null) {
-                    BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
-                    navView.setSelectedItemId(R.id.tab2);
-                }
-            }
-        });
-    }
-
-    void doBindService() {
-        if (mIsBound == false) {
-            getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE);
-            mIsBound = true;
-            Log.i(TAG, "Binding..");
-        }
-    }
-
-    void doUnbindService() {
-        if (mIsBound) {
-            // If we have received the service, and hence registered with it, then now is the time to unregister.
-            if (mService != null) {
-                try {
-                    Message msg = Message.obtain(null, 4646, 4646);
-                    msg.replyTo = mMessenger;
-                    mService.send(msg);
-                } catch (RemoteException e) {
-                    // There is nothing special we need to do if the service has crashed.
-                }
-            }
-            // Detach our existing connection.
-            getActivity().unbindService(mConnection);
-            mIsBound = false;
-            Log.i(TAG, "UnBinding..");
-        }
     }
 
     @Override
@@ -199,6 +136,80 @@ public class HomeFragment extends Fragment {
             doUnbindService();
         } catch (Throwable t) {
             Log.e(TAG, "Failed to unbind from the service", t);
+        }
+    }
+
+    private void setAlarmSwitch() {
+        alarmSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (alarmSwitch.isChecked()) {
+                    Log.i(TAG, "Switch alarm ON");
+
+                    if (getActivity() != null && !RequestService.isRunning()) {
+                        doBindService(); //bind service to fragment
+                    }
+                } else {
+                    Log.i(TAG, "Switch alarm OFF");
+                    if (getActivity() != null && RequestService.isRunning()) {
+                        doUnbindService();
+                    }
+                }
+            }
+        });
+    }
+
+    private void setRealTimeSwitch() {
+        realTimeSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (realTimeSwitch.isChecked()) {
+                    Log.i(TAG, "Real Time ON");
+                } else {
+                    Log.i(TAG, "Real Time OFF");
+                }
+            }
+        });
+    }
+
+    private void setShowLocationButton() {
+        showLocationButton.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("ResourceType")
+            @Override
+            public void onClick(View v) {
+                if (getActivity() != null) {
+                    BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
+                    navView.setSelectedItemId(R.id.tab2);
+                }
+            }
+        });
+    }
+
+    void doBindService() {
+        if (mIsBound == false) {
+            getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE); //previous ServiceConnection to detect the service activity
+            mIsBound = true;
+            Log.i(TAG, "Binding..");
+        }
+    }
+
+    void doUnbindService() {
+        if (mIsBound) {
+            // If we have received the service, and hence registered with it, then now is the time to unregister.
+            if (mService != null) {
+                try {
+                    Message msg = Message.obtain(null, RequestService.MSG_UNREGISTER_CLIENT);
+                    msg.replyTo = mMessenger;
+                    mService.send(msg);
+                } catch (RemoteException e) {
+                    // There is nothing special we need to do if the service has crashed.
+                }
+            }
+
+            // Detach our existing connection.
+            getActivity().unbindService(mConnection);
+            mIsBound = false;
+            Log.i(TAG, "UnBinding..");
         }
     }
 }
