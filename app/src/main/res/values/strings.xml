@@ -16,4 +16,5 @@
     <string name="dialog_message_validate_parameter">Choose other value for parameter</string>
     <string name="dialog_title_validate_parameter">Invalid value of parameter</string>
     <string name="button_dialog_ok">Ok</string>
+    <string name="dialog_title_service_running">Service is running</string>
 </resources>

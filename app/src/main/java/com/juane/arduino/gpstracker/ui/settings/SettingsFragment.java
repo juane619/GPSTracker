@@ -11,6 +11,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.service.RequestService;
 import com.juane.arduino.gpstracker.utils.Utils;
 
 import java.net.MalformedURLException;
@@ -26,15 +27,42 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private static boolean isMobileValidated = false;
     private static boolean parametersEmpty = false;
 
+    EditTextPreference editTextPreferenceURL;
+    EditTextPreference editTextPreferenceDistance;
+    EditTextPreference editTextPreferenceMobile;
+    EditTextPreference editTextPreferenceMessage;
+    ListPreference listPreferenceTime;
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if(RequestService.isRunning()){
+            disableAllPreferences();
+
+            Utils.showServiceIsRunningDialog(getActivity(), null);
+        }else{
+            enableAllPreferences();
+        }
+    }
+
+
+
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
-        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_url))));
-        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_distance))));
-        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime))));
-        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_phone))));
-        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message))));
+        editTextPreferenceURL = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_url)));
+        editTextPreferenceDistance = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_distance)));
+        listPreferenceTime = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime)));
+        editTextPreferenceMobile = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_phone)));
+        editTextPreferenceMessage = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message)));
+
+        bindSummaryValue(editTextPreferenceURL);
+        bindSummaryValue(editTextPreferenceDistance);
+        bindSummaryValue(listPreferenceTime);
+        bindSummaryValue(editTextPreferenceMobile);
+        bindSummaryValue(editTextPreferenceMessage);
     }
 
     private void bindSummaryValue(Preference preference) {
@@ -55,6 +83,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 Utils.showInvalidParameterDialog(getActivity(), null);
                 parametersEmpty = true;
                 preference.setSummary(stringValue);
+                //getActivity().findViewById(preference.getLayoutResource());
             } else {
                 if (preference instanceof ListPreference) {
                     ListPreference listPreference = (ListPreference) preference;
@@ -117,5 +146,21 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     public static boolean isSettingsValidated() {
         return !parametersEmpty && isDistanceValidated && isURLValidated && isMobileValidated;
+    }
+
+    private void enableAllPreferences() {
+        editTextPreferenceURL.setEnabled(true);
+        editTextPreferenceDistance.setEnabled(true);
+        listPreferenceTime.setEnabled(true);
+        editTextPreferenceMobile.setEnabled(true);
+        editTextPreferenceMessage.setEnabled(true);
+    }
+
+    private void disableAllPreferences() {
+        editTextPreferenceURL.setEnabled(false);
+        editTextPreferenceDistance.setEnabled(false);
+        listPreferenceTime.setEnabled(false);
+        editTextPreferenceMobile.setEnabled(false);
+        editTextPreferenceMessage.setEnabled(false);
     }
 }

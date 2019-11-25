@@ -24,11 +24,14 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.preference.EditTextPreference;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.service.RequestService;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
+import com.juane.arduino.gpstracker.utils.Utils;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
@@ -118,10 +121,13 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.i(TAG, "Fragment resumed..");
+
         if (!SettingsFragment.isSettingsValidated()) {
             alarmSwitch.setEnabled(false);
             realTimeSwitch.setEnabled(false);
             showLocationButton.setEnabled(false);
+
+            Utils.showInvalidParameterDialog(getActivity(), "some_invalid");
         } else {
             alarmSwitch.setEnabled(true);
             realTimeSwitch.setEnabled(true);
@@ -149,7 +155,8 @@ public class HomeFragment extends Fragment {
 
                     if (getActivity() != null && !RequestService.isRunning()) {
                         if(doBindService()) { //bind service to fragment
-
+//                            SettingsFragment s = (SettingsFragment) getFragmentManager().findFragmentById(R.id.)
+//                            EditTextPreference serverNamePref = (EditTextPreference) PreferenceManager.getDefaultSharedPreferences(getContext())..getString(R.string.key_url));
                         }
                     }
                 } else {

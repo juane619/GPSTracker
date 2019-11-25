@@ -15,10 +15,19 @@
             android:summary="Server URL to read GPS data"
             android:title="Server URL" />
         <EditTextPreference
+            android:background="#FF5722"
+            android:backgroundTint="#FF5722"
+            android:backgroundTintMode="add"
+            android:defaultFocusHighlightEnabled="true"
+            android:defaultValue="0.1"
             android:dialogTitle="Select considerate distance to distinguish coordinates (km)"
+            android:forceDarkAllowed="true"
+            android:foregroundTint="#00E70B0B"
+            android:foregroundTintMode="src_in"
             android:inputType="numberDecimal"
             android:key="@string/key_distance"
-            android:defaultValue="0.1"
+            android:outlineAmbientShadowColor="#FF5722"
+            android:outlineSpotShadowColor="#FF5722"
             android:summary="Considerate distance to distinguish coordinates (km)"
             android:title="Considerate distance (km)" />
         <ListPreference
