@@ -6,4 +6,14 @@
     <string name="home_title">Home</string>
     <string name="map_title">Map</string>
     <string name="settings_title">Settings</string>
+    <string name="key_url">url_text</string>
+    <string name="key_distance">distance_value</string>
+    <string name="key_intervalTime">interval_time</string>
+    <string name="key_phone">phone_number</string>
+    <string name="key_message">message_text</string>
+    <string name="path_main_filegps">readsgps.txt</string>
+    <string name="path_auxfilegps">readsgps_aux.txt</string>
+    <string name="dialog_message_validate_parameter">Choose other value for parameter</string>
+    <string name="dialog_title_validate_parameter">Invalid value of parameter</string>
+    <string name="button_dialog_ok">Ok</string>
 </resources>

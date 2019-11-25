@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <PreferenceCategory
+        android:key="general_settings"
+        android:title="GENERAL">
+        <EditTextPreference
+            android:dialogTitle="Set URL from server to read GPS data"
+            android:inputType="text"
+            android:key="@string/key_url"
+            android:defaultValue="http://www.prueba.com/gpsfile.txt"
+            android:summary="Server URL to read GPS data"
+            android:title="Server URL" />
+        <EditTextPreference
+            android:dialogTitle="Select considerate distance to distinguish coordinates (km)"
+            android:inputType="numberDecimal"
+            android:key="@string/key_distance"
+            android:defaultValue="0.1"
+            android:summary="Considerate distance to distinguish coordinates (km)"
+            android:title="Considerate distance (km)" />
+        <ListPreference
+            android:dialogTitle="Select time interval to read from server"
+            android:entries="@array/settings_list_preference_titles"
+            android:entryValues="@array/settings_list_preference_values"
+            android:key="@string/key_intervalTime"
+            android:defaultValue="5"
+            android:summary="Time interval to read from server"
+            android:title="Time interval" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="notifications_settings"
+        android:title="NOTIFICATIONS">
+        <EditTextPreference
+            android:dialogTitle="Set phone number"
+            android:inputType="number"
+            android:key="@string/key_phone"
+            android:defaultValue="666666666"
+            android:summary="Notifications phone number"
+            android:title="Phone number" />
+        <EditTextPreference
+            android:dialogTitle="Select message to notify by Whatsapp"
+            android:inputType="text"
+            android:key="@string/key_message"
+            android:defaultValue="Message to notify"
+            android:summary="Message to notify by Whatsapp"
+            android:title="Notification message" />
+    </PreferenceCategory>
+</PreferenceScreen>

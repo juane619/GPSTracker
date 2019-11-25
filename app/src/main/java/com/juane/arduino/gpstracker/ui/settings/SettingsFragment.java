@@ -1,35 +1,121 @@
 package com.juane.arduino.gpstracker.ui.settings;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.preference.EditTextPreference;
+import androidx.preference.ListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
 
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.utils.Utils;
 
-public class SettingsFragment extends Fragment {
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Objects;
 
+public class SettingsFragment extends PreferenceFragmentCompat {
+    private static final String TAG = "SettingsFragment";
     private SettingsViewModel settingsViewModel;
 
-    public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        settingsViewModel =
-                ViewModelProviders.of(this).get(SettingsViewModel.class);
-        View root = inflater.inflate(R.layout.fragment_settings, container, false);
-        final TextView textView = root.findViewById(R.id.text_settings);
-        settingsViewModel.getText().observe(this, new Observer<String>() {
-            @Override
-            public void onChanged(@Nullable String s) {
-                textView.setText(s);
+    private static boolean isURLValidated = false;
+    private static boolean isDistanceValidated = false;
+    private static boolean isMobileValidated = false;
+    private static boolean parametersEmpty = false;
+
+    @Override
+    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+        setPreferencesFromResource(R.xml.preferences, rootKey);
+
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_url))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_distance))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_phone))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message))));
+    }
+
+    private void bindSummaryValue(Preference preference) {
+        preference.setOnPreferenceChangeListener(listener);
+
+        listener.onPreferenceChange(preference,
+                PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), ""));
+    }
+
+    private Preference.OnPreferenceChangeListener listener = new Preference.OnPreferenceChangeListener() {
+        @Override
+        public boolean onPreferenceChange(Preference preference, Object newValue) {
+            //String oldValue = PreferenceManager.getDefaultSharedPreferences(preference.getContext()).getString(preference.getKey(), "");
+            String stringValue = newValue.toString();
+            parametersEmpty = false;
+
+            if (stringValue.isEmpty()) {
+                Utils.showInvalidParameterDialog(getActivity(), null);
+                parametersEmpty = true;
+                preference.setSummary(stringValue);
+            } else {
+                if (preference instanceof ListPreference) {
+                    ListPreference listPreference = (ListPreference) preference;
+                    int index = listPreference.findIndexOfValue(stringValue);
+                    preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
+                } else if (preference instanceof EditTextPreference) {
+                    if (preference.getKey().equals(getResources().getString(R.string.key_url))) { //URL
+                        preference.setSummary(stringValue);
+                        // validate URL
+                        try {
+                            isURLValidated = true;
+                            URL url = new URL(stringValue);
+                        } catch (MalformedURLException e) {
+                            //e.printStackTrace();
+                            Log.e(TAG, "Malformed URL..");
+                            isURLValidated = false;
+                            Utils.showInvalidParameterDialog(getActivity(),  "URL");
+                        }
+                    } else if (preference.getKey().equals(getResources().getString(R.string.key_phone))) { //PHONE
+                        preference.setSummary(stringValue);
+                        isMobileValidated = true;
+
+                        if (stringValue.isEmpty() || !Utils.isValidMobile(stringValue)) {
+                            Log.e(TAG, "Invalid mobile phone..");
+                            isMobileValidated = false;
+                            Utils.showInvalidParameterDialog(getActivity(), "mobile phone");
+                        }
+                    }
+                    if (preference.getKey().equals(getResources().getString(R.string.key_distance))) { //DISTANCE
+                        preference.setSummary(stringValue);
+                        isDistanceValidated = true;
+
+                        if (!Utils.isValidMobile(stringValue)) {
+                            if (stringValue.isEmpty() || Double.parseDouble(stringValue) < 0) {
+                                Log.e(TAG, "Invalid distance..");
+                                isDistanceValidated = false;
+                                Utils.showInvalidParameterDialog(getActivity(), "distance");
+                            }
+                        }
+                    }
+                }
+
+//            else if(preference instanceof RingtonePreference){
+//                if(stringValue.parametersEmpty()) {
+//                    preference.setSummary("Silent");
+//                }else{
+//                    Ringtone ringtone = RingtoneManager.getRingtone(preference.getContext(), Uri.parse(stringValue));
+//
+//                    if(ringtone == null){
+//                        preference.setSummary("Choose notification ringtone");
+//                    }else{
+//                        preference.setSummary(ringtone.getTitle(preference.getContext()));
+//                    }
+//                }
+//            }
             }
-        });
-        return root;
+            return true;
+        }
+    };
+
+    public static boolean isSettingsValidated() {
+        return !parametersEmpty && isDistanceValidated && isURLValidated && isMobileValidated;
     }
 }
