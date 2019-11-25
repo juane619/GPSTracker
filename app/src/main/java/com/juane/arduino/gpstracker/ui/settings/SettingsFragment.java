@@ -25,6 +25,8 @@ import androidx.preference.PreferenceManager;
 
 import com.juane.arduino.gpstracker.R;
 
+import java.util.Objects;
+
 public class SettingsFragment extends PreferenceFragmentCompat {
 
     private SettingsViewModel settingsViewModel;
@@ -33,11 +35,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
-        bindSummaryValue(findPreference("url_text"));
-        bindSummaryValue(findPreference("distance_text"));
-        bindSummaryValue(findPreference("interval_time"));
-        bindSummaryValue(findPreference("phone_number"));
-        bindSummaryValue(findPreference("message_text"));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_url))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_distance))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_phone))));
+        bindSummaryValue(Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message))));
     }
 
     private static void bindSummaryValue(Preference preference){
@@ -55,7 +57,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             if(preference instanceof ListPreference){
                 ListPreference listPreference = (ListPreference) preference;
                 int index = listPreference.findIndexOfValue(stringValue);
-                preference.setSummary(index > 0 ? listPreference.getEntries()[index]:null);
+                preference.setSummary(index >= 0 ? listPreference.getEntries()[index]:null);
             } else if(preference instanceof EditTextPreference){
                 preference.setSummary(stringValue);
             }
