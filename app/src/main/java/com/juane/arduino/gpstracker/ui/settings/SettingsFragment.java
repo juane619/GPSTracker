@@ -39,6 +39,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         if(RequestService.isRunning()){
             disableAllPreferences();
+
+            Utils.showServiceIsRunningDialog(getActivity(), null);
         }else{
             enableAllPreferences();
         }
@@ -81,6 +83,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 Utils.showInvalidParameterDialog(getActivity(), null);
                 parametersEmpty = true;
                 preference.setSummary(stringValue);
+                //getActivity().findViewById(preference.getLayoutResource());
             } else {
                 if (preference instanceof ListPreference) {
                     ListPreference listPreference = (ListPreference) preference;

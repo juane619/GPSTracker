@@ -35,6 +35,26 @@ public class Utils {
         dialog.show();
     }
 
+    public static void showServiceIsRunningDialog(FragmentActivity fragmentActivity, String parameter){
+        String message;
+
+        message = "Preferences are disabled while modes alarm or real time are enabled";
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(fragmentActivity);
+
+        builder.setMessage(message)
+                .setTitle(R.string.dialog_title_service_running);
+        builder.setPositiveButton(R.string.button_dialog_ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+    }
+
     public static boolean isValidMail(String email) {
         return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
     }

@@ -31,6 +31,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.service.RequestService;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
+import com.juane.arduino.gpstracker.utils.Utils;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
@@ -120,10 +121,13 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         Log.i(TAG, "Fragment resumed..");
+
         if (!SettingsFragment.isSettingsValidated()) {
             alarmSwitch.setEnabled(false);
             realTimeSwitch.setEnabled(false);
             showLocationButton.setEnabled(false);
+
+            Utils.showInvalidParameterDialog(getActivity(), "some_invalid");
         } else {
             alarmSwitch.setEnabled(true);
             realTimeSwitch.setEnabled(true);
