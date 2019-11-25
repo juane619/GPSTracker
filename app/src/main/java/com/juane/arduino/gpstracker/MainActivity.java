@@ -10,17 +10,16 @@ import com.juane.arduino.gpstracker.pager.BottomBarAdapter;
 import com.juane.arduino.gpstracker.pager.NoSwipePager;
 import com.juane.arduino.gpstracker.ui.home.HomeFragment;
 import com.juane.arduino.gpstracker.ui.map.MapFragment;
-import com.juane.arduino.gpstracker.ui.notifications.NotificationsFragment;
+import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 
 public class MainActivity extends AppCompatActivity {
-
     private static final String TAG = "MainActivity";
     private NoSwipePager viewPager;
     private BottomNavigationView navigation;
 
     private HomeFragment frag1 = new HomeFragment();
     private MapFragment frag2 = new MapFragment();
-    private NotificationsFragment frag3 = new NotificationsFragment();
+    private SettingsFragment frag3 = new SettingsFragment();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
