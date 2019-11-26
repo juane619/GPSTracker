@@ -54,13 +54,10 @@ public class MainActivity extends AppCompatActivity {
 
         viewPager.setAdapter(pagerAdapter);
 
-
-
         //Handling the tab clicks
         navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-
                 switch (menuItem.getItemId()) {
                     case R.id.tab1:
                         viewPager.setCurrentItem(0);
@@ -76,6 +73,10 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
+    }
+
+    public BottomBarAdapter getBottomBarAdapter() {
+        return (BottomBarAdapter) viewPager.getAdapter();
     }
 
     private void setFiles() {

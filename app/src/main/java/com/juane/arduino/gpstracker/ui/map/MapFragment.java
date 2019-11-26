@@ -98,6 +98,10 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
             // Permission was not granted, display error dialog.
             showMissingPermissionError();
             mPermissionDenied = false;
+        }else{
+            if(!mMap.isMyLocationEnabled()){
+                enableMyLocation();
+            }
         }
     }
 
@@ -164,7 +168,7 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
 
         mMap.addMarker(new MarkerOptions().position(newMarker).title("New device location"));
         // For zooming automatically to the location of the marker
-        CameraPosition cameraPosition = new CameraPosition.Builder().target(newMarker).zoom(12).build();
+        CameraPosition cameraPosition = new CameraPosition.Builder().target(newMarker).zoom(16).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 

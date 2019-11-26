@@ -1,6 +1,7 @@
 package com.juane.arduino.gpstracker.ui.home;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -26,11 +27,15 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.preference.EditTextPreference;
 import androidx.preference.PreferenceManager;
+import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
+import com.juane.arduino.gpstracker.pager.BottomBarAdapter;
 import com.juane.arduino.gpstracker.service.RequestService;
+import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 import com.juane.arduino.gpstracker.utils.Utils;
 
@@ -47,6 +52,8 @@ public class HomeFragment extends Fragment {
     boolean mIsBound;
     final Messenger mMessenger = new Messenger(new IncomingHandler());
 
+    MapFragment mapFragment;
+
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
@@ -58,11 +65,25 @@ public class HomeFragment extends Fragment {
                     break;
                 case RequestService.MSG_SENDING_LOCATION:
                     GPSDirection gpsRead = (GPSDirection) msg.obj;
-                    Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
-                    Log.i(TAG, "Nueva localizacion: " + gpsRead.toString());
+                    //Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
+                    //Log.i(TAG, "Nueva localizacion: " + gpsRead.toString());
+                    BottomNavigationView navView = getActivity().findViewById(R.id.navigation);
+                    navView.setSelectedItemId(R.id.tab2);
 
                     //update map
+                    if(mapFragment == null){
+                        BottomBarAdapter bottomBarAdapter = ((MainActivity) getActivity()).getBottomBarAdapter();
 
+                        if(bottomBarAdapter.getCount() > 0){
+                            mapFragment = (MapFragment) bottomBarAdapter.getItem(1); // map fragment
+
+                            if(mapFragment != null){
+                                mapFragment.addMarker(gpsRead);
+                            }
+                        }
+                    }else{
+                        mapFragment.addMarker(gpsRead);
+                    }
 
                     break;
                 case RequestService.MSG_START_REQUEST:
@@ -105,6 +126,8 @@ public class HomeFragment extends Fragment {
         }
     };
 
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         homeViewModel =
