@@ -93,7 +93,7 @@ public class RequestService extends Service {
             } else if (msg.what == MSG_START_REQUEST) {
                 Log.i(TAG, "Starting obtain gps data..");
 
-                double considerateDistance = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("distance_value", "0.15"));
+                //double considerateDistance = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("distance_value", "0.15"));
                 //Log.i(TAG, "DISTANCE in service: " + considerateDistance);
 
                 while (isRunning) {
@@ -109,7 +109,7 @@ public class RequestService extends Service {
                                 ReversedLinesFileReader reverseFileOs = new ReversedLinesFileReader(fileOS, Charset.defaultCharset());
 
                                 while ((lineAux = reverseFileOs.readLine()) != null) {
-                                    lastDirection = new GPSDirection(lineAux);
+                                    lastDirection = new GPSDirection(lineAux, getApplicationContext());
 
                                     if (lastDirection.isValid()) {
                                         //Log.i(TAG, "Direction: " + lastDirection.toString());
@@ -136,23 +136,19 @@ public class RequestService extends Service {
                                 ReversedLinesFileReader reverseFileOsAux = new ReversedLinesFileReader(fileOSAux, Charset.defaultCharset());
 
                                 while ((lineAux = reverseFileOsAux.readLine()) != null) {
-                                    GPSDirection auxDirection = new GPSDirection(lineAux);
+                                    GPSDirection auxDirection = new GPSDirection(lineAux, getApplicationContext());
 
                                     if (auxDirection.isValid()) {
-                                        try {
-                                            if (mClient != null) {
-                                                mClient.send(Message.obtain(null, MSG_SENDING_LOCATION, 25, 25));
-                                            }
-                                        } catch (RemoteException ex) {
-                                            ex.printStackTrace();
-                                        }
-//                                    Log.i(TAG, "Direction: " + lastDirection.toString());
-//                                    Log.i(TAG, "Aux Direction: " + auxDirection.toString());
-
                                         // two files already read, compare and work.
                                         if (!lastDirection.isEqual(auxDirection)) {
-                                            if (lastDirection.distanciaCoord(auxDirection) > considerateDistance) {
-                                                Log.i(TAG, "MOVING!!!!");
+                                            Log.i(TAG, "MOVING!!!!");
+
+                                            try {
+                                                if (mClient != null) {
+                                                    mClient.send(Message.obtain(null, MSG_SENDING_LOCATION, auxDirection));
+                                                }
+                                            } catch (RemoteException ex) {
+                                                ex.printStackTrace();
                                             }
 
                                             lastDirection = auxDirection;

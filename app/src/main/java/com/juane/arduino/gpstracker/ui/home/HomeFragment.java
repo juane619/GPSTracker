@@ -29,6 +29,7 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.service.RequestService;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 import com.juane.arduino.gpstracker.utils.Utils;
@@ -56,7 +57,9 @@ public class HomeFragment extends Fragment {
                     alarmSwitch.setChecked(false);
                     break;
                 case RequestService.MSG_SENDING_LOCATION:
+                    GPSDirection gpsRead = (GPSDirection) msg.obj;
                     Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
+                    Log.i(TAG, "Nueva localizacion: " + gpsRead.toString());
                     break;
                 case RequestService.MSG_START_REQUEST:
                     Log.i(TAG, "REQUEST TO START..");
