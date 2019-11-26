@@ -113,6 +113,13 @@ public class RequestService extends Service {
 
                                     if (lastDirection.isValid()) {
                                         //Log.i(TAG, "Direction: " + lastDirection.toString());
+                                        try {
+                                            if (mClient != null) {
+                                                mClient.send(Message.obtain(null, MSG_SENDING_LOCATION, lastDirection));
+                                            }
+                                        } catch (RemoteException ex) {
+                                            ex.printStackTrace();
+                                        }
                                         break;
                                     }
                                 }

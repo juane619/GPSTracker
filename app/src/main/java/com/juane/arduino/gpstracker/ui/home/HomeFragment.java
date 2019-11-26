@@ -60,6 +60,10 @@ public class HomeFragment extends Fragment {
                     GPSDirection gpsRead = (GPSDirection) msg.obj;
                     Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
                     Log.i(TAG, "Nueva localizacion: " + gpsRead.toString());
+
+                    //update map
+
+
                     break;
                 case RequestService.MSG_START_REQUEST:
                     Log.i(TAG, "REQUEST TO START..");
