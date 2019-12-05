@@ -15,17 +15,16 @@ public class GPSDirection {
     private double longitude;
     private double latitude;
     private LocalDateTime date;
-    private static Context ctx;
 
     public GPSDirection(String rawCoordinates, Context ctx) {
         if (rawCoordinates != null && !rawCoordinates.isEmpty()) {
             parseRAWCoordinates(rawCoordinates);
         }
-        this.ctx = ctx;
-        CONSIDERATE_DISTANCE = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(ctx).getString("distance_value", "0.15"));;
+
+        GPSDirection.CONSIDERATE_DISTANCE = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(ctx).getString("distance_value", "0.15"));
     }
 
-    public double distanceCoord(GPSDirection other) {
+    private double distanceCoord(GPSDirection other) {
         //double hearthRadius = 3958.75; //in miles
         double hearthRadius = 6371; //radius of earth in Km
         double dLat = Math.toRadians(other.latitude - this.latitude);
@@ -57,7 +56,7 @@ public class GPSDirection {
         return latitude;
     }
 
-    public LocalDateTime getDate() {
+    private LocalDateTime getDate() {
         return date;
     }
 
@@ -71,8 +70,8 @@ public class GPSDirection {
         String[] parsedArrayRAW = RAWCoordinates.split(",");
 
         if (parsedArrayRAW.length > 2) {
-            this.latitude = Double.parseDouble(parsedArrayRAW[1]);
-            this.longitude = -Double.parseDouble(parsedArrayRAW[0]);
+            this.latitude = Double.parseDouble(parsedArrayRAW[0]);
+            this.longitude = Double.parseDouble(parsedArrayRAW[1]);
 
             String dateRaw = parsedArrayRAW[2];
             this.date = parseDateRAW(dateRaw);

@@ -5,7 +5,6 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +21,6 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -32,13 +30,13 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.utils.PermissionsUtils;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButtonClickListener,
         GoogleMap.OnMyLocationClickListener, OnMapReadyCallback {
@@ -60,15 +58,16 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
     private GoogleMap mMap;
     private MapViewModel mapViewModel;
 
-    LocationRequest mLocationRequest;
-    FusedLocationProviderClient mFusedLocationClient;
-    Marker mCurrLocationMarker;
+    private LocationRequest mLocationRequest;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private Marker mCurrLocationMarker;
+    private ArrayList<Marker> markers = new ArrayList<>();
 
     @Override
     public void onCreate(Bundle b){
         super.onCreate(b);
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+        //mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
     }
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -76,9 +75,7 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
         mapViewModel =
                 ViewModelProviders.of(this).get(MapViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_map, container, false);
-
-        return root;
+        return inflater.inflate(R.layout.fragment_map, container, false);
     }
 
     @Override
@@ -94,38 +91,38 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
     public void onResume() {
         //Log.i(TAG, "Fragment resumed..");
         super.onResume();
-        if (mPermissionDenied) {
+        //if (mPermissionDenied) {
             // Permission was not granted, display error dialog.
-            showMissingPermissionError();
-            mPermissionDenied = false;
-        }else{
-            if(!mMap.isMyLocationEnabled()){
-                enableMyLocation();
-            }
-        }
+            //showMissingPermissionError();
+            //mPermissionDenied = false;
+        //}else{
+            //if(!mMap.isMyLocationEnabled()){
+                //enableMyLocation();
+            //}
+        //}
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        mMap.setOnMyLocationButtonClickListener(this);
-        mMap.setOnMyLocationClickListener(this);
-        enableMyLocation();
+        //mMap.setOnMyLocationButtonClickListener(this);
+        //mMap.setOnMyLocationClickListener(this);
+        //enableMyLocation();
 
-        mLocationRequest = new LocationRequest();
+        //mLocationRequest = new LocationRequest();
 
         // Add a marker in Sydney and move the camera
-        //LatLng myLocation = new LatLng(-34, 151);
-        //CameraPosition cameraPosition = new CameraPosition.Builder().target(myLocation).zoom(12).build();
-        //mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+        LatLng myLocation = new LatLng(37.1809411, -3.6262913);
+        CameraPosition cameraPosition = new CameraPosition.Builder().target(myLocation).zoom(14).build();
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
     /**
      * Enables the My Location layer if the fine location permission has been granted.
      */
     private void enableMyLocation() {
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(Objects.requireNonNull(getContext()), Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             // Permission to access the location is missing.
             PermissionsUtils.requestPermission((AppCompatActivity) getActivity(), LOCATION_PERMISSION_REQUEST_CODE,
@@ -137,7 +134,7 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
         }
     }
 
-    LocationCallback mLocationCallback = new LocationCallback() {
+    private LocationCallback mLocationCallback = new LocationCallback() {
         @Override
         public void onLocationResult(LocationResult locationResult) {
             List<Location> locationList = locationResult.getLocations();
@@ -166,10 +163,18 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
     public void addMarker(GPSDirection gpsRead){
         LatLng newMarker = new LatLng(gpsRead.getLatitude(), gpsRead.getLongitude());
 
-        mMap.addMarker(new MarkerOptions().position(newMarker).title("New device location"));
+        markers.add(mMap.addMarker(new MarkerOptions().position(newMarker).title("New device location")));
         // For zooming automatically to the location of the marker
         CameraPosition cameraPosition = new CameraPosition.Builder().target(newMarker).zoom(16).build();
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
+    public void clearMarkers(){
+        if(markers.size() > 0){
+            for (Marker m: markers) {
+                m.remove();
+            }
+        }
     }
 
     @Override
@@ -207,6 +212,6 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
      */
     private void showMissingPermissionError() {
         PermissionsUtils.PermissionDeniedDialog
-                .newInstance(true).show(getFragmentManager(), "dialog");
+                .newInstance(true).show(Objects.requireNonNull(getFragmentManager()), "dialog");
     }
 }

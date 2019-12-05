@@ -22,9 +22,7 @@
 
         <service
             android:name=".service.RequestService"
-            android:enabled="true"
-            android:exported="true"
-            android:permission="TODO" />
+            android:enabled="true" />
 
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.

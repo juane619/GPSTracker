@@ -27,11 +27,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private static boolean isMobileValidated = false;
     private static boolean parametersEmpty = false;
 
-    EditTextPreference editTextPreferenceURL;
-    EditTextPreference editTextPreferenceDistance;
-    EditTextPreference editTextPreferenceMobile;
-    EditTextPreference editTextPreferenceMessage;
-    ListPreference listPreferenceTime;
+    private EditTextPreference editTextPreferenceURL;
+    private EditTextPreference editTextPreferenceDistance;
+    private EditTextPreference editTextPreferenceMobile;
+    private EditTextPreference editTextPreferenceMessage;
+    private ListPreference listPreferenceTime;
 
     @Override
     public void onResume() {

@@ -31,6 +31,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.util.Objects;
 
 public class RequestService extends Service {
     public static final int MSG_PROBLEM_STOP = 1;
@@ -137,7 +138,6 @@ public class RequestService extends Service {
                             FileOutputStream foAux = new FileOutputStream(fileOSAux);
 
                             if (getRemoteGPSFile(foAux)) {
-                                //Log.i(TAG, "main file already read. Length: " + fileOS.length());
                                 Log.i(TAG, "second file aux readed. Length: " + fileOSAux.length());
 
                                 ReversedLinesFileReader reverseFileOsAux = new ReversedLinesFileReader(fileOSAux, Charset.defaultCharset());
@@ -159,6 +159,8 @@ public class RequestService extends Service {
                                             }
 
                                             lastDirection = auxDirection;
+                                        }else{
+                                            Log.i(TAG, "Directions equal..");
                                         }
 
                                         break;
@@ -191,11 +193,11 @@ public class RequestService extends Service {
                         // Restore interrupt status.
                         Thread.currentThread().interrupt();
                     } catch (IOException e) {
-                        Log.e(TAG, e.getLocalizedMessage());
+                        Log.e(TAG, Objects.requireNonNull(e.getLocalizedMessage()));
                         e.printStackTrace();
                     } catch (RemoteException e) {
                         //e.printStackTrace();
-                        Log.e(TAG, e.getLocalizedMessage());
+                        Log.e(TAG, Objects.requireNonNull(e.getLocalizedMessage()));
                     }
                 }
             }else if(msg.what == MSG_UNREGISTER_CLIENT) {
@@ -217,7 +219,7 @@ public class RequestService extends Service {
             url = new URL(SOURCE_URL); //URL already validated in settings
             Log.i(TAG, "SOURCE_URL: " + SOURCE_URL);
         } catch (IOException e) {
-            Log.e(TAG, e.getLocalizedMessage());
+            Log.e(TAG, Objects.requireNonNull(e.getLocalizedMessage()));
         }
 
         //once URL is assigned, and files to store gps data are created  start service
@@ -225,8 +227,8 @@ public class RequestService extends Service {
         String FILE_NAME_AUX = this.getResources().getString((R.string.path_auxfilegps));
 
         if (getExternalFilesDir(null) != null) {
-            fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
-            fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+            fileOS = new File(Objects.requireNonNull(getExternalFilesDir(null)).getPath() + "/" + FILE_NAME);
+            fileOSAux = new File(Objects.requireNonNull(getExternalFilesDir(null)).getPath() + "/" + FILE_NAME_AUX);
         }
 
         // For each start request, send a message to start a job and deliver the

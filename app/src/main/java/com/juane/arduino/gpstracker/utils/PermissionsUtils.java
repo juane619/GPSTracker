@@ -8,11 +8,14 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.DialogFragment;
 
 import com.juane.arduino.gpstracker.R;
+
+import java.util.Objects;
 
 /**
  * Utility class for access to runtime permissions.
@@ -74,9 +77,10 @@ public abstract class PermissionsUtils {
             return dialog;
         }
 
+        @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            mFinishActivity = getArguments().getBoolean(ARGUMENT_FINISH_ACTIVITY);
+            mFinishActivity = Objects.requireNonNull(getArguments()).getBoolean(ARGUMENT_FINISH_ACTIVITY);
 
             return new AlertDialog.Builder(getActivity())
                     .setMessage(R.string.location_permission_denied)
@@ -85,12 +89,12 @@ public abstract class PermissionsUtils {
         }
 
         @Override
-        public void onDismiss(DialogInterface dialog) {
+        public void onDismiss(@NonNull DialogInterface dialog) {
             super.onDismiss(dialog);
             if (mFinishActivity) {
                 Toast.makeText(getActivity(), R.string.permission_required_toast,
                         Toast.LENGTH_SHORT).show();
-                getActivity().finish();
+                Objects.requireNonNull(getActivity()).finish();
             }
         }
     }
@@ -116,14 +120,12 @@ public abstract class PermissionsUtils {
          * permission.
          * <p>
          * The permission is requested after clicking 'ok'.
-         *
-         * @param requestCode    Id of the request that is used to request the permission. It is
+         *  @param requestCode    Id of the request that is used to request the permission. It is
          *                       returned to the
          *                       {@link }.
          * @param finishActivity Whether the calling Activity should be finished if the dialog is
-         *                       cancelled.
          */
-        public static RationaleDialog newInstance(int requestCode, boolean finishActivity) {
+        static RationaleDialog newInstance(int requestCode, boolean finishActivity) {
             Bundle arguments = new Bundle();
             arguments.putInt(ARGUMENT_PERMISSION_REQUEST_CODE, requestCode);
             arguments.putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity);
@@ -132,10 +134,11 @@ public abstract class PermissionsUtils {
             return dialog;
         }
 
+        @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             Bundle arguments = getArguments();
-            final int requestCode = arguments.getInt(ARGUMENT_PERMISSION_REQUEST_CODE);
+            final int requestCode = Objects.requireNonNull(arguments).getInt(ARGUMENT_PERMISSION_REQUEST_CODE);
             mFinishActivity = arguments.getBoolean(ARGUMENT_FINISH_ACTIVITY);
 
             return new AlertDialog.Builder(getActivity())
@@ -144,7 +147,7 @@ public abstract class PermissionsUtils {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // After click on Ok, request the permission.
-                            ActivityCompat.requestPermissions(getActivity(),
+                            ActivityCompat.requestPermissions(Objects.requireNonNull(getActivity()),
                                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                                     requestCode);
                             // Do not finish the Activity while requesting permission.
@@ -156,14 +159,14 @@ public abstract class PermissionsUtils {
         }
 
         @Override
-        public void onDismiss(DialogInterface dialog) {
+        public void onDismiss(@NonNull DialogInterface dialog) {
             super.onDismiss(dialog);
             if (mFinishActivity) {
                 Toast.makeText(getActivity(),
                         R.string.permission_required_toast,
                         Toast.LENGTH_SHORT)
                         .show();
-                getActivity().finish();
+                Objects.requireNonNull(getActivity()).finish();
             }
         }
     }

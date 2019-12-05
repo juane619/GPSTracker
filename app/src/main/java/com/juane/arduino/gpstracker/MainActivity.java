@@ -1,10 +1,7 @@
 package com.juane.arduino.gpstracker;
 
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Message;
-import android.os.RemoteException;
 import android.util.Log;
 import android.view.MenuItem;
 
@@ -19,11 +16,11 @@ import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private NoSwipePager viewPager;
-    private BottomNavigationView navigation;
 
     private HomeFragment frag1 = new HomeFragment();
     private MapFragment frag2 = new MapFragment();
@@ -39,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
         setFiles();
 
-        navigation = findViewById(R.id.navigation);
+        BottomNavigationView navigation = findViewById(R.id.navigation);
         viewPager = findViewById(R.id.viewPager);
 
         //optimisation
@@ -89,8 +86,8 @@ public class MainActivity extends AppCompatActivity {
 
             if (isExternalDirectoryPresent()) {
                 if(getExternalFilesDir(null) != null) {
-                    fileOS = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME);
-                    fileOSAux = new File(getExternalFilesDir(null).getPath() + "/" + FILE_NAME_AUX);
+                    fileOS = new File(Objects.requireNonNull(getExternalFilesDir(null)).getPath() + "/" + FILE_NAME);
+                    fileOSAux = new File(Objects.requireNonNull(getExternalFilesDir(null)).getPath() + "/" + FILE_NAME_AUX);
                 }
 
                 if (!fileOS.exists()) {
@@ -112,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Not external storage!");
             }
         } catch (IOException e) {
-            Log.e(TAG, e.getLocalizedMessage());
+            Log.e(TAG, Objects.requireNonNull(e.getLocalizedMessage()));
             //e.printStackTrace();
         }
     }
