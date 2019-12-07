@@ -5,6 +5,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -51,6 +54,8 @@ public class HomeFragment extends Fragment {
 
     private MapFragment mapFragment;
 
+    Ringtone ringtoneNotification;
+
     private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
@@ -63,7 +68,15 @@ public class HomeFragment extends Fragment {
                 case RequestService.MSG_SENDING_LOCATION:
                     GPSDirection gpsRead = (GPSDirection) msg.obj;
                     //Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
-                    Log.i(TAG, "Nueva localizacion: " + gpsRead.toString());
+                    Log.i(TAG, "New location: " + gpsRead.toString());
+
+                    // add sound notification when location arrives
+                    try {
+                        ringtoneNotification.play();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Problem playing sound notification");
+                    }
+
                     BottomNavigationView navView = Objects.requireNonNull(getActivity()).findViewById(R.id.navigation);
                     navView.setSelectedItemId(R.id.tab2);
 
@@ -138,6 +151,9 @@ public class HomeFragment extends Fragment {
         setAlarmSwitch();
         setRealTimeSwitch();
         setShowLocationButton();
+
+        //sound notification
+        ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
 
         return root;
     }
