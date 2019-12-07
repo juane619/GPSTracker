@@ -1,8 +1,13 @@
 package com.juane.arduino.gpstracker.service;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -15,10 +20,13 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
 import androidx.preference.PreferenceManager;
 
+import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
+import com.juane.arduino.gpstracker.ui.home.HomeFragment;
 
 import org.apache.commons.io.input.ReversedLinesFileReader;
 
@@ -208,7 +216,25 @@ public class RequestService extends Service {
     }
 
     @Override
+    public void onCreate() {
+        HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+        // Get the HandlerThread's Looper and use it for our Handler
+        // Thread
+        //loop over tasks
+        Looper serviceLooper = thread.getLooper();
+        serviceHandler = new ServiceHandler(serviceLooper);
+
+        mMessenger = new Messenger(serviceHandler); // Target we publish for clients to send messages to IncomingHandler.
+
+        Log.i(TAG, "Request Service created..");
+    }
+
+
+    @Override
     public IBinder onBind(Intent intent) {
+        setNotification();
+
         TIME_SLEEP_SECONDS = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("interval_time", "5"));
         TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
         Log.i(TAG, "SECONDS in service: " + TIME_SLEEP_SECONDS);
@@ -243,20 +269,6 @@ public class RequestService extends Service {
         return mMessenger.getBinder();
     }
 
-    @Override
-    public void onCreate() {
-        HandlerThread thread = new HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND);
-        thread.start();
-        // Get the HandlerThread's Looper and use it for our Handler
-        // Thread
-        //loop over tasks
-        Looper serviceLooper = thread.getLooper();
-        serviceHandler = new ServiceHandler(serviceLooper);
-
-        mMessenger = new Messenger(serviceHandler); // Target we publish for clients to send messages to IncomingHandler.
-
-        Log.i(TAG, "Request Service created..");
-    }
 
 //    @Override
 //    public int onStartCommand(Intent intent, int flags, int startId) {
@@ -396,5 +408,25 @@ public class RequestService extends Service {
             e.printStackTrace();
             Log.e(TAG, "Read Error Exception " + e.getMessage());
         }
+    }
+
+    private void setNotification(){
+        String NOTIFICATION_CHANNEL_ID = "com.juane.arduino.gpstracker";
+        String channelName = "My Background Service";
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+        Notification notification = notificationBuilder.setOngoing(true)
+                .setSmallIcon(R.drawable.googleg_standard_color_18)
+                .setContentTitle("MyGPSTracker is running")
+                .setPriority(NotificationManager.IMPORTANCE_LOW)
+                .setCategory(Notification.CATEGORY_ALARM)
+                .build();
+        startForeground(2, notification);
     }
 }
