@@ -1,12 +1,14 @@
 package com.juane.arduino.gpstracker.gps;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class GPSDirection {
     private static double CONSIDERATE_DISTANCE;
@@ -39,9 +41,11 @@ public class GPSDirection {
     }
 
     public boolean isEqual(GPSDirection other) {
-        return this.date.isEqual(other.getDate()) &&
-                this.distanceCoord(other) <= CONSIDERATE_DISTANCE;
-                        //|| (Double.compare(this.latitude, other.latitude) == 0 && Double.compare(this.longitude, other.longitude) == 0));
+        double distance = this.distanceCoord(other);
+        boolean distanceEqual = Double.compare(distance, CONSIDERATE_DISTANCE) < 0;
+        Log.i("GPS DIRECTION", "Distance: " + distance);
+
+        return this.date.isEqual(other.getDate()) || distanceEqual;
     }
 
     public boolean isValid() {
@@ -74,14 +78,19 @@ public class GPSDirection {
             this.longitude = Double.parseDouble(parsedArrayRAW[1]);
 
             String dateRaw = parsedArrayRAW[2];
-            this.date = parseDateRAW(dateRaw);
 
-            this.isValid = true;
+            try {
+                this.date = parseDateRAW(dateRaw);
+                this.isValid = true;
+            }catch(DateTimeParseException e){
+                this.isValid = false;
+            }
         }
     }
 
     private LocalDateTime parseDateRAW(String dateRaw) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
         return LocalDateTime.parse(dateRaw, formatter);
     }
 
