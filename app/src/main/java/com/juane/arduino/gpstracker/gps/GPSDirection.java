@@ -41,12 +41,12 @@ public class GPSDirection {
     }
 
     public boolean isEqual(GPSDirection other) {
-        return false;
-//        double distance = this.distanceCoord(other);
-//        boolean distanceEqual = Double.compare(distance, CONSIDERATE_DISTANCE) < 0;
-//        Log.i("GPS DIRECTION", "Distance: " + distance);
-//
-//        return this.date.isEqual(other.getDate()) || distanceEqual;
+//        return false;
+        double distance = this.distanceCoord(other);
+        boolean distanceEqual = Double.compare(distance, CONSIDERATE_DISTANCE) < 0;
+        //Log.i("GPS DIRECTION", "Distance: " + distance);
+
+        return this.date.isEqual(other.getDate()) || distanceEqual;
     }
 
     public boolean isValid() {

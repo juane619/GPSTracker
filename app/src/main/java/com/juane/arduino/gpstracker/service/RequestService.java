@@ -411,6 +411,13 @@ public class RequestService extends Service {
     }
 
     private void setNotification(){
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+
+
         String NOTIFICATION_CHANNEL_ID = "com.juane.arduino.gpstracker";
         String channelName = "My Background Service";
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
@@ -426,6 +433,7 @@ public class RequestService extends Service {
                 .setContentTitle("MyGPSTracker is running")
                 .setPriority(NotificationManager.IMPORTANCE_LOW)
                 .setCategory(Notification.CATEGORY_ALARM)
+                .setContentIntent(pendingIntent)
                 .build();
         startForeground(2, notification);
     }
