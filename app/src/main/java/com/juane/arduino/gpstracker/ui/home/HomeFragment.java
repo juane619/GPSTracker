@@ -5,6 +5,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -22,16 +25,19 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.preference.EditTextPreference;
-import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.gps.GPSDirection;
+import com.juane.arduino.gpstracker.pager.BottomBarAdapter;
 import com.juane.arduino.gpstracker.service.RequestService;
+import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 import com.juane.arduino.gpstracker.utils.Utils;
+
+import java.util.Objects;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
@@ -42,11 +48,15 @@ public class HomeFragment extends Fragment {
     private Button showLocationButton;
 
     private Intent intentRequestService;
-    Messenger mService = null;
-    boolean mIsBound;
-    final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private Messenger mService = null;
+    private boolean mIsBound;
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
 
-    class IncomingHandler extends Handler {
+    private MapFragment mapFragment;
+
+    Ringtone ringtoneNotification;
+
+    private class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
             //Log.i(TAG, "RECIBIENDO MENSAJE DEL SERVICE..");
@@ -56,7 +66,33 @@ public class HomeFragment extends Fragment {
                     alarmSwitch.setChecked(false);
                     break;
                 case RequestService.MSG_SENDING_LOCATION:
-                    Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
+                    GPSDirection gpsRead = (GPSDirection) msg.obj;
+                    //Log.i(TAG, "RECIBIENDO LOCALIZACION LEIDA..");
+                    Log.i(TAG, "New location: " + gpsRead.toString());
+
+                    // add sound notification when location arrives
+                    try {
+                        ringtoneNotification.play();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Problem playing sound notification");
+                    }
+
+                    BottomNavigationView navView = Objects.requireNonNull(getActivity()).findViewById(R.id.navigation);
+                    navView.setSelectedItemId(R.id.tab2);
+
+                    //update map
+                    if(mapFragment == null){
+                        BottomBarAdapter bottomBarAdapter = ((MainActivity) getActivity()).getBottomBarAdapter();
+
+                        if(bottomBarAdapter.getCount() > 0){
+                            mapFragment = (MapFragment) bottomBarAdapter.getItem(1); // map fragment
+
+                            mapFragment.addMarker(gpsRead);
+                        }
+                    }else{
+                        mapFragment.addMarker(gpsRead);
+                    }
+
                     break;
                 case RequestService.MSG_START_REQUEST:
                     Log.i(TAG, "REQUEST TO START..");
@@ -98,6 +134,8 @@ public class HomeFragment extends Fragment {
         }
     };
 
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         homeViewModel =
@@ -113,6 +151,9 @@ public class HomeFragment extends Fragment {
         setAlarmSwitch();
         setRealTimeSwitch();
         setShowLocationButton();
+
+        //sound notification
+        ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
 
         return root;
     }
@@ -157,6 +198,9 @@ public class HomeFragment extends Fragment {
                         if(doBindService()) { //bind service to fragment
 //                            SettingsFragment s = (SettingsFragment) getFragmentManager().findFragmentById(R.id.)
 //                            EditTextPreference serverNamePref = (EditTextPreference) PreferenceManager.getDefaultSharedPreferences(getContext())..getString(R.string.key_url));
+
+                            if(mapFragment != null)
+                                mapFragment.clearMarkers();
                         }
                     }
                 } else {
@@ -196,8 +240,8 @@ public class HomeFragment extends Fragment {
     }
 
     private boolean doBindService() {
-        if (mIsBound == false) {
-            mIsBound = getActivity().bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE); //previous ServiceConnection to detect the service activity
+        if (!mIsBound) {
+            mIsBound = Objects.requireNonNull(getActivity()).bindService(intentRequestService, mConnection, Context.BIND_AUTO_CREATE); //previous ServiceConnection to detect the service activity
             Log.i(TAG, "Binding..");
         }
         return mIsBound;
@@ -217,7 +261,7 @@ public class HomeFragment extends Fragment {
             }
 
             // Detach our existing connection.
-            getActivity().unbindService(mConnection);
+            Objects.requireNonNull(getActivity()).unbindService(mConnection);
             mIsBound = false;
             Log.i(TAG, "UnBinding..");
         }
