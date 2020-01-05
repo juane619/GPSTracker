@@ -32,6 +32,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     private EditTextPreference editTextPreferenceMobile;
     private EditTextPreference editTextPreferenceMessage;
     private ListPreference listPreferenceTime;
+    private ListPreference listPreferenceSound;
 
     @Override
     public void onResume() {
@@ -46,8 +47,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }
     }
 
-
-
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
@@ -57,12 +56,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         listPreferenceTime = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime)));
         editTextPreferenceMobile = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_phone)));
         editTextPreferenceMessage = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message)));
+        listPreferenceSound = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_soundNotification)));
 
         bindSummaryValue(editTextPreferenceURL);
         bindSummaryValue(editTextPreferenceDistance);
         bindSummaryValue(listPreferenceTime);
         bindSummaryValue(editTextPreferenceMobile);
         bindSummaryValue(editTextPreferenceMessage);
+        bindSummaryValue(listPreferenceSound);
     }
 
     private void bindSummaryValue(Preference preference) {
@@ -125,20 +126,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                         }
                     }
                 }
-
-//            else if(preference instanceof RingtonePreference){
-//                if(stringValue.parametersEmpty()) {
-//                    preference.setSummary("Silent");
-//                }else{
-//                    Ringtone ringtone = RingtoneManager.getRingtone(preference.getContext(), Uri.parse(stringValue));
-//
-//                    if(ringtone == null){
-//                        preference.setSummary("Choose notification ringtone");
-//                    }else{
-//                        preference.setSummary(ringtone.getTitle(preference.getContext()));
-//                    }
-//                }
-//            }
             }
             return true;
         }

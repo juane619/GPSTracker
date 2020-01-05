@@ -238,7 +238,7 @@ public class RequestService extends Service {
         TIME_SLEEP_SECONDS = Integer.parseInt(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("interval_time", "5"));
         TIME_SLEEP_MILISECONDS = TIME_SLEEP_SECONDS * 1000;
         Log.i(TAG, "SECONDS in service: " + TIME_SLEEP_SECONDS);
-        SOURCE_URL = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("url_text", "http://prueba.com/gps.txt"); //"http:/agrocarvajal.com/gps.txt"
+        SOURCE_URL = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("url_text", "http://agrocarvajal.com/gps.txt"); //"http:/agrocarvajal.com/gps.txt"
 
         // from URL read gps file
         try {
