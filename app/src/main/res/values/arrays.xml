@@ -16,4 +16,12 @@
         <item>25</item>
         <item>30</item>
     </string-array>
+    <string-array name="settings_sounds_titles">
+        <item>Low sound</item>
+        <item>Loud sound</item>
+    </string-array>
+    <string-array name="settings_sounds_values">
+        <item>LOW_SOUND</item>
+        <item>LOUD_SOUND</item>
+    </string-array>
 </resources>
