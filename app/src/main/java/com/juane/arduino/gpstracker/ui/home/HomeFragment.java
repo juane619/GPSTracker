@@ -5,6 +5,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.media.AudioAttributes;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -152,9 +153,6 @@ public class HomeFragment extends Fragment {
         setRealTimeSwitch();
         setShowLocationButton();
 
-        //sound notification
-        ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
-
         return root;
     }
 
@@ -194,8 +192,6 @@ public class HomeFragment extends Fragment {
                 if (alarmSwitch.isChecked()) {
                     Log.i(TAG, "Switch alarm ON");
 
-<<<<<<< Updated upstream
-=======
                     //sound notification
                     String ringtonePreference = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString("sound_notification", "LOUD_SOUND");
 
@@ -213,7 +209,6 @@ public class HomeFragment extends Fragment {
                             ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
                     }
 
->>>>>>> Stashed changes
                     if (getActivity() != null && !RequestService.isRunning()) {
                         if(doBindService()) { //bind service to fragment
 //                            SettingsFragment s = (SettingsFragment) getFragmentManager().findFragmentById(R.id.)
@@ -228,6 +223,9 @@ public class HomeFragment extends Fragment {
                     if (getActivity() != null && RequestService.isRunning()) {
                         doUnbindService();
                     }
+
+                    if(ringtoneNotification != null && ringtoneNotification.isPlaying())
+                        ringtoneNotification.stop();
                 }
             }
         });

@@ -10,7 +10,7 @@
             android:dialogTitle="Set URL from server to read GPS data"
             android:inputType="text"
             android:key="@string/key_url"
-            android:defaultValue="http://www.prueba.com/gpsfile.txt"
+            android:defaultValue="@string/default_url_server"
             android:summary="Server URL to read GPS data"
             android:title="Server URL" />
         <EditTextPreference
@@ -49,11 +49,19 @@
             android:summary="Notifications phone number"
             android:title="Phone number" />
         <EditTextPreference
-            android:dialogTitle="Select message to notify by Whatsapp"
+            android:dialogTitle="Select message to notify by Telegram"
             android:inputType="text"
             android:key="@string/key_message"
             android:defaultValue="Message to notify"
             android:summary="Message to notify by Telegram"
             android:title="Notification message" />
+        <ListPreference
+            android:dialogTitle="Select type of sound alarm"
+            android:entries="@array/settings_sounds_titles"
+            android:entryValues="@array/settings_sounds_values"
+            android:key="@string/key_soundNotification"
+            android:defaultValue="LOUD_SOUND"
+            android:summary="Sound type of alarm notification"
+            android:title="Sound type of alarm" />
     </PreferenceCategory>
 </PreferenceScreen>
