@@ -53,7 +53,7 @@
             android:inputType="text"
             android:key="@string/key_message"
             android:defaultValue="Message to notify"
-            android:summary="Message to notify by Whatsapp"
+            android:summary="Message to notify by Telegram"
             android:title="Notification message" />
     </PreferenceCategory>
 </PreferenceScreen>

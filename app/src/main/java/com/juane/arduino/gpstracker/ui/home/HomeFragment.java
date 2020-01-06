@@ -194,6 +194,26 @@ public class HomeFragment extends Fragment {
                 if (alarmSwitch.isChecked()) {
                     Log.i(TAG, "Switch alarm ON");
 
+<<<<<<< Updated upstream
+=======
+                    //sound notification
+                    String ringtonePreference = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString("sound_notification", "LOUD_SOUND");
+
+                    switch(ringtonePreference){
+                        case("LOUD_SOUND"):
+                            ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM));
+                            // play alarm even in silent mode
+                            ringtoneNotification.setAudioAttributes(
+                                    new AudioAttributes
+                                            .Builder()
+                                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                            .build());
+                            break;
+                        default:
+                            ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
+                    }
+
+>>>>>>> Stashed changes
                     if (getActivity() != null && !RequestService.isRunning()) {
                         if(doBindService()) { //bind service to fragment
 //                            SettingsFragment s = (SettingsFragment) getFragmentManager().findFragmentById(R.id.)
