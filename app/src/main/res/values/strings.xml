@@ -9,7 +9,7 @@
     <string name="key_url">url_text</string>
     <string name="key_distance">distance_value</string>
     <string name="key_intervalTime">interval_time</string>
-    <string name="key_phone">phone_number</string>
+    <string name="key_chatid">chat_id</string>
     <string name="key_message">message_text</string>
     <string name="path_main_filegps">readsgps.txt</string>
     <string name="path_auxfilegps">readsgps_aux.txt</string>

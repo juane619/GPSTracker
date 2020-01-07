@@ -35,6 +35,7 @@ import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.pager.BottomBarAdapter;
 import com.juane.arduino.gpstracker.service.RequestService;
+import com.juane.arduino.gpstracker.telegram.TelegramBot;
 import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 import com.juane.arduino.gpstracker.utils.Utils;
@@ -56,6 +57,7 @@ public class HomeFragment extends Fragment {
 
     private MapFragment mapFragment;
 
+    TelegramBot telegramBot = new TelegramBot("698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY");
     Ringtone ringtoneNotification;
 
     private class IncomingHandler extends Handler {
@@ -78,6 +80,12 @@ public class HomeFragment extends Fragment {
                     } catch (Exception e) {
                         Log.e(TAG, "Problem playing sound notification");
                     }
+
+                    String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
+                    String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
+
+                    new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
+                    //telegramBot.sendMessage("216208949", "Probando..");
 
                     BottomNavigationView navView = Objects.requireNonNull(getActivity()).findViewById(R.id.navigation);
                     navView.setSelectedItemId(R.id.tab2);
@@ -194,12 +202,9 @@ public class HomeFragment extends Fragment {
                     Log.i(TAG, "Switch alarm ON");
 
                     //sound notification
-                    String ringtonePreference = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString("sound_notification", "LOUD_SOUND");
+                    String ringtonePreference = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_soundNotification), "LOUD_SOUND");
 
                     switch(ringtonePreference){
-                        case("LOW_SOUND"):
-                            ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION));
-                            break;
                         case("LOUD_SOUND"):
                             ringtoneNotification = RingtoneManager.getRingtone(getContext(), RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM));
                             // play alarm even in silent mode

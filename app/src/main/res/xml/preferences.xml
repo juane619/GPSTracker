@@ -42,18 +42,18 @@
         android:key="notifications_settings"
         android:title="NOTIFICATIONS">
         <EditTextPreference
-            android:dialogTitle="Set phone number"
+            android:dialogTitle="Set chat ID"
             android:inputType="number"
-            android:key="@string/key_phone"
-            android:defaultValue="666666666"
-            android:summary="Notifications phone number"
-            android:title="Phone number" />
+            android:key="@string/key_chatid"
+            android:defaultValue="216208949"
+            android:summary="Notifications chat ID Telegram"
+            android:title="Chat ID" />
         <EditTextPreference
             android:dialogTitle="Select message to notify by Telegram"
             android:inputType="text"
             android:key="@string/key_message"
             android:defaultValue="Message to notify"
-            android:summary="Message to notify by Whatsapp"
+            android:summary="Message to notify by Telegram"
             android:title="Notification message" />
         <ListPreference
             android:dialogTitle="Select type of sound alarm"

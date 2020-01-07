@@ -1,6 +1,5 @@
 package com.juane.arduino.gpstracker.ui.settings;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -29,7 +28,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     private EditTextPreference editTextPreferenceURL;
     private EditTextPreference editTextPreferenceDistance;
-    private EditTextPreference editTextPreferenceMobile;
+    private EditTextPreference editTextPreferenceChatId;
     private EditTextPreference editTextPreferenceMessage;
     private ListPreference listPreferenceTime;
     private ListPreference listPreferenceSound;
@@ -54,14 +53,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         editTextPreferenceURL = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_url)));
         editTextPreferenceDistance = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_distance)));
         listPreferenceTime = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime)));
-        editTextPreferenceMobile = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_phone)));
+        editTextPreferenceChatId = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_chatid)));
         editTextPreferenceMessage = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_message)));
         listPreferenceSound = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_soundNotification)));
 
         bindSummaryValue(editTextPreferenceURL);
         bindSummaryValue(editTextPreferenceDistance);
         bindSummaryValue(listPreferenceTime);
-        bindSummaryValue(editTextPreferenceMobile);
+        bindSummaryValue(editTextPreferenceChatId);
         bindSummaryValue(editTextPreferenceMessage);
         bindSummaryValue(listPreferenceSound);
     }
@@ -103,7 +102,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                             isURLValidated = false;
                             Utils.showInvalidParameterDialog(getActivity(),  "URL");
                         }
-                    } else if (preference.getKey().equals(getResources().getString(R.string.key_phone))) { //PHONE
+                    } else if (preference.getKey().equals(getResources().getString(R.string.key_chatid))) { //PHONE
                         preference.setSummary(stringValue);
                         isMobileValidated = true;
 
@@ -139,7 +138,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         editTextPreferenceURL.setEnabled(true);
         editTextPreferenceDistance.setEnabled(true);
         listPreferenceTime.setEnabled(true);
-        editTextPreferenceMobile.setEnabled(true);
+        editTextPreferenceChatId.setEnabled(true);
         editTextPreferenceMessage.setEnabled(true);
     }
 
@@ -147,7 +146,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         editTextPreferenceURL.setEnabled(false);
         editTextPreferenceDistance.setEnabled(false);
         listPreferenceTime.setEnabled(false);
-        editTextPreferenceMobile.setEnabled(false);
+        editTextPreferenceChatId.setEnabled(false);
         editTextPreferenceMessage.setEnabled(false);
     }
 }
