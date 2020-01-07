@@ -81,7 +81,7 @@ public class HomeFragment extends Fragment {
                         Log.e(TAG, "Problem playing sound notification");
                     }
 
-                    new TelegramBot("698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY").execute("216208949", "Probando..");
+                    new TelegramBot("698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY").execute("216208949", "New location: " + gpsRead.toString());
                     //telegramBot.sendMessage("216208949", "Probando..");
 
                     BottomNavigationView navView = Objects.requireNonNull(getActivity()).findViewById(R.id.navigation);

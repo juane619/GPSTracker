@@ -75,22 +75,23 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
                     throw new IOException("Invalid response from server: " + code);
                 }
 
-                StringBuilder content;
-
-                try (BufferedReader in = new BufferedReader(
-                        new InputStreamReader(c.getInputStream()))) {
-                    String line;
-                    content = new StringBuilder();
-                    while ((line = in.readLine()) != null) {
-                        content.append(line);
-                        content.append(System.lineSeparator());
-                    }
-
-                    System.out.println(content.toString());
-                } catch (ProtocolException e) {
-                    Log.e(TAG, "Error reading from buffer in telegram message: " + e.getMessage());
-                    return;
-                }
+                // Read response from Telegram API
+//                StringBuilder content;
+//
+//                try (BufferedReader in = new BufferedReader(
+//                        new InputStreamReader(c.getInputStream()))) {
+//                    String line;
+//                    content = new StringBuilder();
+//                    while ((line = in.readLine()) != null) {
+//                        content.append(line);
+//                        content.append(System.lineSeparator());
+//                    }
+//
+//                    //System.out.println(content.toString());
+//                } catch (ProtocolException e) {
+//                    Log.e(TAG, "Error reading from buffer in telegram message: " + e.getMessage());
+//                    return;
+//                }
             } catch (IOException e) {
                 //Read exception if something went wrong
                 //e.printStackTrace();
@@ -98,6 +99,8 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
                 return;
             } catch (JSONException e) {
                 e.printStackTrace();
+            } finally {
+                c.disconnect();
             }
         }
     }
