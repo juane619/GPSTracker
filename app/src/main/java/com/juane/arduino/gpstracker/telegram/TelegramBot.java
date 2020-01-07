@@ -49,7 +49,6 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
             try {
                 postData.put(CHATID_FIELD, chatId);
                 postData.put(MESSAGE_FIELD, message);
-                postData.put("disable_notification", true);
 
                 c = (HttpURLConnection) URLbot.openConnection();
                 c.setRequestMethod("POST");//Set Request Method to "GET" since we are grtting data

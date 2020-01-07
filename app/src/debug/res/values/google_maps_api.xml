@@ -21,4 +21,5 @@
     string in this file.
     -->
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyDjstCohPCarG5eZv3d31-LWkL0tR0CK3E</string>
+    <string name="telegram_bot_key" templateMergeStrategy="preserve" translatable="false">698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY</string>
 </resources>

@@ -81,7 +81,10 @@ public class HomeFragment extends Fragment {
                         Log.e(TAG, "Problem playing sound notification");
                     }
 
-                    new TelegramBot("698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY").execute("216208949", "New location: " + gpsRead.toString());
+                    String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
+                    String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
+
+                    new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
                     //telegramBot.sendMessage("216208949", "Probando..");
 
                     BottomNavigationView navView = Objects.requireNonNull(getActivity()).findViewById(R.id.navigation);
@@ -199,7 +202,7 @@ public class HomeFragment extends Fragment {
                     Log.i(TAG, "Switch alarm ON");
 
                     //sound notification
-                    String ringtonePreference = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString("sound_notification", "LOUD_SOUND");
+                    String ringtonePreference = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_soundNotification), "LOUD_SOUND");
 
                     switch(ringtonePreference){
                         case("LOUD_SOUND"):
