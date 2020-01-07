@@ -27,6 +27,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.preference.PreferenceManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.juane.arduino.gpstracker.MainActivity;
@@ -34,6 +35,7 @@ import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.pager.BottomBarAdapter;
 import com.juane.arduino.gpstracker.service.RequestService;
+import com.juane.arduino.gpstracker.telegram.TelegramBot;
 import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
 import com.juane.arduino.gpstracker.utils.Utils;
@@ -55,6 +57,7 @@ public class HomeFragment extends Fragment {
 
     private MapFragment mapFragment;
 
+    TelegramBot telegramBot = new TelegramBot("698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY");
     Ringtone ringtoneNotification;
 
     private class IncomingHandler extends Handler {
@@ -77,6 +80,9 @@ public class HomeFragment extends Fragment {
                     } catch (Exception e) {
                         Log.e(TAG, "Problem playing sound notification");
                     }
+
+                    new TelegramBot("698010971:AAEYEULMhpz3uFAbcVrO5s7vZscwbHDnwIY").execute("216208949", "Probando..");
+                    //telegramBot.sendMessage("216208949", "Probando..");
 
                     BottomNavigationView navView = Objects.requireNonNull(getActivity()).findViewById(R.id.navigation);
                     navView.setSelectedItemId(R.id.tab2);
