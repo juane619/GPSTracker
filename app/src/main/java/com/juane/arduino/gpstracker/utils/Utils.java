@@ -8,6 +8,7 @@ import androidx.fragment.app.FragmentActivity;
 import com.juane.arduino.gpstracker.R;
 
 public class Utils {
+
     public static void showInvalidParameterDialog(FragmentActivity fragmentActivity, String parameter){
         String message;
 
@@ -36,9 +37,7 @@ public class Utils {
     }
 
     public static void showServiceIsRunningDialog(FragmentActivity fragmentActivity, String parameter){
-        String message;
-
-        message = "Preferences are disabled while modes alarm or real time are enabled";
+        String message = "Preferences are disabled while service is enabled";
 
         AlertDialog.Builder builder = new AlertDialog.Builder(fragmentActivity);
 

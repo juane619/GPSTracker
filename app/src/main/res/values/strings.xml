@@ -1,8 +1,9 @@
 <resources>
     <string name="app_name">GPSTracker</string>
-    <string name="alarm_text">Alarm</string>
-    <string name="real_time_text">Real Time</string>
-    <string name="show_location_text">Show Location</string>
+    <string name="enable_text">Enable</string>
+    <string name="sound_notification_text">Sound notifications</string>
+    <string name="telegram_notification_text">Telegram notifications</string>
+    <string name="show_locations_text">Show locations</string>
     <string name="home_title">Home</string>
     <string name="map_title">Map</string>
     <string name="settings_title">Settings</string>
@@ -22,5 +23,6 @@
     <string name="add_ringtone_text">Choose ringtone</string>
     <string name="key_soundNotification">sound_notification</string>
     <string name="default_url_server">http://www.agrocarvajal.com/gps.txt</string>
+    <string name="text_filter_day">Filter by day</string>
 
 </resources>

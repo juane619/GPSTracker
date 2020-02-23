@@ -6,11 +6,15 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class GPSDirection {
+    private static final String TAG = "GPSDirection";
     private static double CONSIDERATE_DISTANCE;
 
     private boolean isValid = false;
@@ -20,6 +24,14 @@ public class GPSDirection {
 
     public GPSDirection(String rawCoordinates, Context ctx) {
         if (rawCoordinates != null && !rawCoordinates.isEmpty()) {
+            parseRAWCoordinates(rawCoordinates);
+        }
+
+        GPSDirection.CONSIDERATE_DISTANCE = Double.parseDouble(PreferenceManager.getDefaultSharedPreferences(ctx).getString("distance_value", "0.15"));
+    }
+
+    public GPSDirection(JSONObject rawCoordinates, Context ctx) {
+        if (rawCoordinates != null) {
             parseRAWCoordinates(rawCoordinates);
         }
 
@@ -61,7 +73,7 @@ public class GPSDirection {
         return latitude;
     }
 
-    private LocalDateTime getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
@@ -83,11 +95,31 @@ public class GPSDirection {
             try {
                 this.date = parseDateRAW(dateRaw);
                 this.isValid = true;
-            }catch(DateTimeParseException e){
+            } catch (DateTimeParseException e) {
                 this.isValid = false;
             }
         }
     }
+
+    private void parseRAWCoordinates(JSONObject RAWCoordinates) {
+        if (RAWCoordinates != null) {
+            try {
+                this.latitude = RAWCoordinates.getDouble("lat");
+                this.longitude = RAWCoordinates.getDouble("long");
+                String dateRaw = RAWCoordinates.getString("date");
+
+                this.date = parseDateRAW(dateRaw);
+                this.isValid = true;
+            } catch (DateTimeParseException e) {
+                Log.e(TAG, "PROBLEM with date format..");
+                this.isValid = false;
+            } catch (JSONException e) {
+                Log.e(TAG, "PROBLEM parsing JSON..");
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     private LocalDateTime parseDateRAW(String dateRaw) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");

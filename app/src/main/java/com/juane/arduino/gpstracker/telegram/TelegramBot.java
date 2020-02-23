@@ -15,7 +15,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 
 public class TelegramBot extends AsyncTask<String, Void, Void> {
@@ -26,7 +25,6 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
     private final String MESSAGE_FIELD = "text";
     private final String SEND_MESSAGE = "sendMessage";
     private String botId;
-    private String chatMessage;
 
     public TelegramBot(String botId) {
         this.botId = botId;
@@ -51,7 +49,7 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
                 postData.put(MESSAGE_FIELD, message);
 
                 c = (HttpURLConnection) URLbot.openConnection();
-                c.setRequestMethod("POST");//Set Request Method to "GET" since we are grtting data
+                c.setRequestMethod("POST");//Set Request Method to "POST" since we are getting data
                 c.setRequestProperty("Content-Type", "application/json");
                 c.setDoOutput(true);
 
