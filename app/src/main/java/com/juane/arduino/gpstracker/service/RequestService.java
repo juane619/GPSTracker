@@ -26,6 +26,7 @@ import androidx.preference.PreferenceManager;
 import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
+import com.juane.arduino.gpstracker.utils.HttpUtils;
 import com.juane.arduino.gpstracker.utils.URLConstants;
 
 import org.json.JSONArray;
@@ -43,7 +44,6 @@ import java.net.URL;
 import java.util.Objects;
 
 public class RequestService extends Service {
-
 
     private static final String TAG = "Request Service";
     private static boolean isRunning = false;
@@ -131,93 +131,12 @@ public class RequestService extends Service {
         super.onDestroy();
     }
 
-    /**
-     * Returns true when request is done and the gps file in remote server is read and false
-     * when HTTP request obtain a HTTP response indicating errors.
-     *
-     * @param sb Output param to save in output file of Android OS (might be a database)
-     *           the file read.
-     * @return boolean indicating the reading gps file process.
-     */
-    private boolean getRemoteGPSData(final URL url, StringBuffer sb) throws IOException {
-        //create url and connect
-        HttpURLConnection httpConn = null;
-        boolean exitReading = true;
-
-        Authenticator.setDefault(new Authenticator() {
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication("juane619", "Mygpstracker1!".toCharArray());
-            }
-        });
-
-        httpConn = (HttpURLConnection) url.openConnection();
-        httpConn.setRequestMethod("GET");//Set Request Method to "GET" since we are getting data
-
-        // auth
-        // String auth = "juane619" + ":" + "Mygpstracker1!";
-
-        //byte[] encoding = Base64.encode(auth.getBytes("UTF-8"), Base64.URL_SAFE);
-
-        //byte[] encodedAuth = Base64.encode(auth.getBytes(StandardCharsets.UTF_8), Base64.CRLF);
-        // String authHeaderValue = "Basic " + new String(encoding);
-        //authHeaderValue = authHeaderValue.substring(0,authHeaderValue.length()-1);
-        //httpConn.setRequestProperty("Authorization", authHeaderValue);
-
-        httpConn.connect();//connect the URL Connection
-        BufferedReader br;
-
-        //If Connection response is not OK then show Logs
-        if (httpConn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            Log.e(TAG, "Server returned HTTP " + httpConn.getResponseCode()
-                    + " " + httpConn.getResponseMessage());
-
-            br = new BufferedReader(new InputStreamReader(httpConn.getErrorStream()));
-            exitReading = false;
-        } else {
-            br = new BufferedReader(new InputStreamReader(httpConn.getInputStream()));//Get InputStream for connection
-        }
-
-        if (br != null) {
-            readStream(br, sb);
-            Log.i(TAG, sb.toString());
-        }
-
-        if (httpConn != null)
-            httpConn.disconnect();
-
-        return exitReading;
-    }
-
-    /**
-     * From input stream (as Input Stream of HTTP Connection) transfer its data to FileOutputStream fo.
-     *
-     * @param br Input param pointing to resource (as HTTP Connection) to read from it.
-     * @param sb Output param to save in output file of Android OS (might be a database)
-     *           the file read.
-     */
-    private void readStream(BufferedReader br, StringBuffer sb) {
-        String line;
-
-        try {
-            while ((line = br.readLine()) != null) {
-                sb.append(line);//.write(buffer, 0, len1);//Write new file
-            }
-
-            //Close all connection after doing task
-            br.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(TAG, "Read Error Exception " + e.getMessage());
-        }
-    }
-
     private void setNotification() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.addCategory(Intent.CATEGORY_LAUNCHER);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-
 
         String NOTIFICATION_CHANNEL_ID = "com.juane.arduino.gpstracker";
         String channelName = "My Background Service";
@@ -282,13 +201,13 @@ public class RequestService extends Service {
                             if (lastDirection == null || !lastDirection.isValid()) { //first time read: read main file
                                 Log.i(TAG, "FIRST TIME switch: ");
 
-                                StringBuffer sb = new StringBuffer();
+                                StringBuffer response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
 
-                                if (getRemoteGPSData(url, sb)) {
-                                    Log.i(TAG, "Content from server: " + sb.length());
+                                if (response != null) {
+                                    Log.i(TAG, "Content from server: " + response.length());
 
                                     // DATA read -> parse it to JSON
-                                    JSONObject lastGpsDataRead = new JSONObject(sb.toString());
+                                    JSONObject lastGpsDataRead = new JSONObject(response.toString());
                                     JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
 
                                     JSONObject lastDirectionRAW = addressesJSON.getJSONObject(addressesJSON.length() - 1);
@@ -320,12 +239,12 @@ public class RequestService extends Service {
                                 }
                             } else { //next reads
                                 Log.i(TAG, "SECOND OR MORE times switch: ");
-                                StringBuffer sb = new StringBuffer();
+                                StringBuffer response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
 
-                                if (getRemoteGPSData(url, sb)) {
-                                    Log.i(TAG, "Content from server: " + sb.length());
+                                if (response != null) {
+                                    Log.i(TAG, "Content from server: " + response.length());
 
-                                    JSONObject lastGpsDataRead = new JSONObject(sb.toString());
+                                    JSONObject lastGpsDataRead = new JSONObject(response.toString());
                                     JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
 
                                     JSONObject lastDirectionRAW = addressesJSON.getJSONObject(addressesJSON.length() - 1);

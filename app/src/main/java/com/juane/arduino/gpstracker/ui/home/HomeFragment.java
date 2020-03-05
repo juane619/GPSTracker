@@ -33,15 +33,20 @@ import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.service.MessageType;
+import com.juane.arduino.gpstracker.service.RequestGps;
 import com.juane.arduino.gpstracker.service.RequestService;
 import com.juane.arduino.gpstracker.telegram.TelegramBot;
 import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
+import com.juane.arduino.gpstracker.utils.URLConstants;
 import com.juane.arduino.gpstracker.utils.Utils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -238,12 +243,23 @@ public class HomeFragment extends Fragment {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
-                mainActivity.changeTab(R.id.mapTabId);
+                mapFragment.clearMarkers();
+
+                if(dateSelected != null) {
+                    String urlStr = URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
+                    urlStr = urlStr + "?" + URLConstants.DATE_PARAMETER + "=" + dateSelected;
+
+                    new RequestGps(mainActivity, mapFragment).execute(urlStr);
+
+                   // mainActivity.changeTab(R.id.mapTabId);
+                }
             }
         });
     }
 
     private void setCalendarView() {
+        dateSelected = dateFormat.format(LocalDate.now());
+
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
             public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {

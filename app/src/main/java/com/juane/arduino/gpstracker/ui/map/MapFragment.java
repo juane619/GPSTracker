@@ -118,9 +118,9 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
             for (int i = 1; i < gpsReads.length() - 1; i++) {
                 currentGpsRead = new GPSDirection(gpsReads.getJSONObject(i), getActivity().getApplicationContext());
 
-                //if (!currentGpsRead.isEqual(lastGpsRead)) {
+                if (!currentGpsRead.isEqual(lastGpsRead)) {
                     addMarker(currentGpsRead);
-                //}
+                }
 
                 lastGpsRead = new GPSDirection(gpsReads.getJSONObject(i), getActivity().getApplicationContext());
             }

@@ -3,14 +3,14 @@ package com.juane.arduino.gpstracker.telegram;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.juane.arduino.gpstracker.utils.HttpUtils;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -30,17 +30,17 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
         this.botId = botId;
     }
 
-    public void sendMessage(String chatId, String message) {
+    public String sendMessage(String chatId, String message) {
         if (botId != null) {
             String URLString = BASEURL + botId + "/" + SEND_MESSAGE;// + "?" + CHATID_FIELD + "=" + chatId + "&" + MESSAGE_FIELD + "=" + message;
-            HttpURLConnection c = null;
+
             URL URLbot;
 
             try {
                 URLbot = new URL(URLString);
             } catch (MalformedURLException e) {
-                Log.e(TAG, "Download Error Exception " + e.getMessage());
-                return;
+                Log.e(TAG, "Download Error Exception setting URL" + e.getMessage());
+                return null;
             }
 
             JSONObject postData = new JSONObject();
@@ -48,58 +48,22 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
                 postData.put(CHATID_FIELD, chatId);
                 postData.put(MESSAGE_FIELD, message);
 
-                c = (HttpURLConnection) URLbot.openConnection();
-                c.setRequestMethod("POST");//Set Request Method to "POST" since we are getting data
-                c.setRequestProperty("Content-Type", "application/json");
-                c.setDoOutput(true);
+                StringBuffer response = HttpUtils.doPost(URLbot, postData, false, null, null);
 
-//                c.connect();//connect the URL Connection
-//
-//                //If Connection response is not OK then show Logs
-//                if (c.getResponseCode() != HttpURLConnection.HTTP_OK) {
-//                    Log.e(TAG, "Server returned HTTP " + c.getResponseCode()
-//                            + " " + c.getResponseMessage());
-//                }
-
-                OutputStream out = new BufferedOutputStream(c.getOutputStream());
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-                        out, "UTF-8"));
-                writer.write(postData.toString());
-                writer.flush();
-
-                int code = c.getResponseCode();
-                if (code != 201 && code != 200) {
-                    throw new IOException("Invalid response from server: " + code);
-                }
-
-                // Read response from Telegram API
-//                StringBuilder content;
-//
-//                try (BufferedReader in = new BufferedReader(
-//                        new InputStreamReader(c.getInputStream()))) {
-//                    String line;
-//                    content = new StringBuilder();
-//                    while ((line = in.readLine()) != null) {
-//                        content.append(line);
-//                        content.append(System.lineSeparator());
-//                    }
-//
-//                    //System.out.println(content.toString());
-//                } catch (ProtocolException e) {
-//                    Log.e(TAG, "Error reading from buffer in telegram message: " + e.getMessage());
-//                    return;
-//                }
+                return response.toString();
+                //if(response != null){
+                //Log.i(TAG, "Response from TelegramBot: " + response.toString());
+                //}
             } catch (IOException e) {
                 //Read exception if something went wrong
                 //e.printStackTrace();
-                Log.e(TAG, "Telegram connection failed: " + e.getMessage());
-                return;
+                Log.e(TAG, "Telegram connection problem: " + e.getMessage());
             } catch (JSONException e) {
                 e.printStackTrace();
-            } finally {
-                c.disconnect();
             }
         }
+
+        return null;
     }
 
     @Override
