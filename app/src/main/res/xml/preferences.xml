@@ -4,15 +4,33 @@
     android:layout_height="match_parent">
 
     <PreferenceCategory
-        android:key="general_settings"
-        android:title="GENERAL">
+        android:key="server_settings"
+        android:title="GPS SERVER">
         <EditTextPreference
-            android:dialogTitle="Set URL from server to read GPS data"
+            android:dialogTitle="Set URL of GPS server"
             android:inputType="text"
             android:key="@string/key_url"
             android:defaultValue="@string/default_url_server"
             android:summary="Server URL to read GPS data"
-            android:title="Server URL" />
+            android:title="URL" />
+        <EditTextPreference
+            android:dialogTitle="Set user of GPS server"
+            android:inputType="text"
+            android:key="@string/key_user"
+            android:summary="Server user to read GPS data"
+            android:defaultValue="@string/default_user_server"
+            android:title="User" />
+        <EditTextPreference
+            android:dialogTitle="Set password of GPS server"
+            android:inputType="textPassword"
+            android:key="@string/key_password"
+            android:summary="Server password to read GPS data"
+            android:title="Password" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="general_settings"
+        android:title="GENERAL">
         <EditTextPreference
             android:background="#FF5722"
             android:backgroundTint="#FF5722"

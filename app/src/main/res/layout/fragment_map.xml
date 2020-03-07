@@ -9,4 +9,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <TextView
+        android:id="@+id/daySelectedTextView"
+        android:layout_width="match_parent"
+        android:layout_height="77dp"
+        android:background="#004E2323"
+        android:text=""
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="34sp" />
+
 </FrameLayout>

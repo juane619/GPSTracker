@@ -160,6 +160,8 @@ public class RequestService extends Service {
 
     // Handler that receives messages from the thread
     private final class ServiceHandler extends Handler {
+
+
         ServiceHandler(Looper looper) {
             super(looper);
         }
@@ -201,7 +203,22 @@ public class RequestService extends Service {
                             if (lastDirection == null || !lastDirection.isValid()) { //first time read: read main file
                                 Log.i(TAG, "FIRST TIME switch: ");
 
-                                StringBuffer response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
+                                StringBuffer response = null;
+                                try {
+                                   response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
+                                }catch(IOException e){
+                                    Log.w(TAG, "NO GPS data found for day: " + dateSelected);
+
+                                    failCounter++;
+
+                                    if(failCounter > 3){
+                                        failCounter = 0;
+
+                                        if (mClient != null) {
+                                            mClient.send(Message.obtain(null, MessageType.SHOW_TOAST, "NO GPS data found"));
+                                        }
+                                    }
+                                }
 
                                 if (response != null) {
                                     Log.i(TAG, "Content from server: " + response.length());
@@ -222,18 +239,6 @@ public class RequestService extends Service {
                                             }
                                         } catch (RemoteException ex) {
                                             ex.printStackTrace();
-                                        }
-                                    }
-                                } else {
-                                    Log.w(TAG, "Problem reading data from gps server..");
-
-                                    failCounter++;
-
-                                    if(failCounter > 5){
-                                        failCounter = 0;
-
-                                        if (mClient != null) {
-                                            mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP));
                                         }
                                     }
                                 }

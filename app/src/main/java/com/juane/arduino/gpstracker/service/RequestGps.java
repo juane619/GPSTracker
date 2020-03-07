@@ -52,7 +52,6 @@ public class RequestGps extends AsyncTask<String, Void, String> {
 
             // POR AQUI SEGUIMOS: nos falta tratar correctamente la PASS y el USER
             StringBuffer response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
-            int e = 54;
 
             return response.toString();
         } catch (IOException e) {
@@ -84,7 +83,7 @@ public class RequestGps extends AsyncTask<String, Void, String> {
             }
         }else{
             Toast.makeText(mainActivity,
-                    "No GPS data in selected day..",
+                    "No GPS data for selected day..",
                     Toast.LENGTH_SHORT).show();
         }
     }

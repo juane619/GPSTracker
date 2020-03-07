@@ -139,9 +139,8 @@ public class HomeFragment extends Fragment {
                 Message msg = Message.obtain(null, MessageType.REGISTER_CLIENT);
                 msg.replyTo = mMessenger;
 
-                // TO DEBUG: From switch, pass today parsed date
-                //LocalDate date = LocalDate.now();
-                //dateSelected = dateFormat.format(date);
+                // From switch, pass today parsed date
+                dateSelected = dateFormat.format(LocalDate.now());
 
                 msg.obj = dateSelected;
 
@@ -154,7 +153,7 @@ public class HomeFragment extends Fragment {
         public void onServiceDisconnected(ComponentName className) {
             // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
             mService = null;
-            Toast.makeText(getActivity(), "Disconnected..", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "Service disconnected..", Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -248,7 +247,7 @@ public class HomeFragment extends Fragment {
                 if(dateSelected != null) {
                     String urlStr = URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
                     urlStr = urlStr + "?" + URLConstants.DATE_PARAMETER + "=" + dateSelected;
-
+                    mapFragment.setSelectedDayTextView(dateSelected);
                     new RequestGps(mainActivity, mapFragment).execute(urlStr);
 
                    // mainActivity.changeTab(R.id.mapTabId);
@@ -341,6 +340,8 @@ public class HomeFragment extends Fragment {
                             try {
                                 mapFragment.clearMarkers();
                                 mapFragment.addMarkers(addressesJSON);
+                                mapFragment.setSelectedDayTextView(dateSelected);
+                                mainActivity.changeTab(R.id.mapTabId);
                             } catch (JSONException e) {
                                 Log.e(TAG, "Error parsing JSON addresses");
                             }
@@ -356,27 +357,28 @@ public class HomeFragment extends Fragment {
                         if (mapFragment != null) {
                             mapFragment.addMarker(gpsRead);
                         }
+
+                        // send telegram msg
+                        if (telegramNotificationsSwitch.isChecked()) {
+                            String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
+                            String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
+
+                            new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
+                        }
+
+                        // add sound notification when location arrives
+                        try {
+                            if (soundNotificationsSwitch.isChecked())
+                                ringtoneNotification.play();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Problem playing sound notification");
+                        }
                     }
 
-                    // add sound notification when location arrives
-                    try {
-                        if (soundNotificationsSwitch.isChecked())
-                            ringtoneNotification.play();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Problem playing sound notification");
-                    }
-
-                    // send telegram msg
-                    if (telegramNotificationsSwitch.isChecked()) {
-                        String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
-                        String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
-
-                        new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
-                    }
-
-                    mainActivity.changeTab(R.id.mapTabId);
                     break;
-
+                case MessageType.SHOW_TOAST:
+                    Toast.makeText(mainActivity, (String) msg.obj, Toast.LENGTH_SHORT).show();
+                    break;
                 default:
                     Log.w(TAG, "UNHANDLED MESSAGE RECEIVED..");
             }

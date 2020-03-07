@@ -22,7 +22,10 @@
     <string name="permission_rationale_location">Permission rationale location</string>
     <string name="add_ringtone_text">Choose ringtone</string>
     <string name="key_soundNotification">sound_notification</string>
-    <string name="default_url_server">http://www.agrocarvajal.com/gps.txt</string>
+    <string name="default_url_server">http://www.agrocarvajal.com</string>
     <string name="text_filter_day">Filter by day</string>
+    <string name="key_user" />
+    <string name="key_password" />
+    <string name="default_user_server">juane619</string>
 
 </resources>

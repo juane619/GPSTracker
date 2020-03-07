@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -27,7 +28,10 @@ import com.juane.arduino.gpstracker.gps.GPSDirection;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButtonClickListener,
@@ -36,37 +40,14 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
 
     private GoogleMap mMap;
 
-    private Marker mCurrLocationMarker;
     private ArrayList<Marker> markers = new ArrayList<>();
-    private LocationCallback mLocationCallback = new LocationCallback() {
-        @Override
-        public void onLocationResult(LocationResult locationResult) {
-            List<Location> locationList = locationResult.getLocations();
-            if (locationList.size() > 0) {
-                //The last location in the list is the newest
-                Location location = locationList.get(locationList.size() - 1);
 
-                if (mCurrLocationMarker != null) {
-                    mCurrLocationMarker.remove();
-                }
-
-                //Place current location marker
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                MarkerOptions markerOptions = new MarkerOptions();
-                markerOptions.position(latLng);
-                markerOptions.title("Current Position");
-                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
-                mCurrLocationMarker = mMap.addMarker(markerOptions);
-
-                //move map camera
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 11));
-            }
-        }
-    };
+    private TextView selectedDayTextView;
 
     @Override
     public void onCreate(Bundle b) {
         super.onCreate(b);
+
 
         //mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
     }
@@ -74,7 +55,11 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        return inflater.inflate(R.layout.fragment_map, container, false);
+        View root = inflater.inflate(R.layout.fragment_map, container, false);
+
+        selectedDayTextView = root.findViewById(R.id.daySelectedTextView);
+
+        return root;
     }
 
     @Override
@@ -172,5 +157,10 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
     @Override
     public void onMyLocationClick(@NonNull Location location) {
         Toast.makeText(getContext(), "Current location:\n" + location, Toast.LENGTH_LONG).show();
+    }
+
+    public void setSelectedDayTextView(String daySelected){
+        LocalDate date =  LocalDate.parse(daySelected, DateTimeFormatter.ofPattern("yyyyMMdd"));//LocalDate.parse("dd/mm/yyyy");
+        selectedDayTextView.setText("Day selected: " + date.format(DateTimeFormatter.ofPattern("dd-MM-YYYY")));
     }
 }

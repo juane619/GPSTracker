@@ -36,6 +36,7 @@ public class HttpUtils {
         httpConn.setRequestMethod("GET");//Set Request Method to "GET" since we are getting data
 
         httpConn.connect();//connect the URL Connection
+
         BufferedReader br = doConnection(httpConn);
 
         if (br != null) {
@@ -102,7 +103,7 @@ public class HttpUtils {
     }
 
     private static BufferedReader doConnection(HttpURLConnection httpConn) throws IOException {
-        BufferedReader br = null;
+        BufferedReader br;
 
         int responseCode = httpConn.getResponseCode();
         if (responseCode != 201 && responseCode != 200) {
