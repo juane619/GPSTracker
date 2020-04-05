@@ -1,4 +1,4 @@
-package com.juane.arduino.gpstracker.telegram;
+package com.juane.arduino.gpstracker.service.telegram;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -8,14 +8,10 @@ import com.juane.arduino.gpstracker.utils.HttpUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.concurrent.TimeoutException;
 
 public class TelegramBot extends AsyncTask<String, Void, Void> {
     private static final String TAG = "Telegram BOT";
@@ -54,7 +50,12 @@ public class TelegramBot extends AsyncTask<String, Void, Void> {
                 //if(response != null){
                 //Log.i(TAG, "Response from TelegramBot: " + response.toString());
                 //}
-            } catch (IOException e) {
+            }catch (TimeoutException e) {
+                //Read exception if something went wrong
+                //e.printStackTrace();
+                Log.e(TAG, "Timeout exception: " + e.getMessage());
+            }
+            catch (IOException e) {
                 //Read exception if something went wrong
                 //e.printStackTrace();
                 Log.e(TAG, "Telegram connection problem: " + e.getMessage());

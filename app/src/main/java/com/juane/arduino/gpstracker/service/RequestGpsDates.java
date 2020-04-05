@@ -6,6 +6,7 @@ import android.util.Log;
 
 import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.ui.home.HomeFragment;
 import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.utils.Errors;
 import com.juane.arduino.gpstracker.utils.HttpUtils;
@@ -24,15 +25,15 @@ import java.net.URL;
 // second argument: durante background (parameter in publish progress)
 // third background: finish background (return doBackground and parameter in onPostExecute)
 
-public class RequestGps extends AsyncTask<String, Void, String> {
-    private static final String TAG = "RequestGPS";
+public class RequestGpsDates extends AsyncTask<String, Void, String> {
+    private static final String TAG = "RequestGPSDates";
     StringBuffer response = new StringBuffer();
     private MainActivity mainActivity;
-    private MapFragment mapFragment;
+    private HomeFragment homeFragment;
 
-    public RequestGps(MainActivity mainActivity, MapFragment mapFragment) {
+    public RequestGpsDates(MainActivity mainActivity, HomeFragment homeFragment) {
         this.mainActivity = mainActivity;
-        this.mapFragment = mapFragment;
+        this.homeFragment = homeFragment;
     }
 
     @Override
@@ -40,7 +41,6 @@ public class RequestGps extends AsyncTask<String, Void, String> {
 
         try {
             // This is getting the url from the string we passed in
-
             URL url = new URL(params[0]);
             String needAuth = params[1];
 
@@ -75,26 +75,30 @@ public class RequestGps extends AsyncTask<String, Void, String> {
     }
 
     @Override
-    protected void onPostExecute(String response) {
-        Log.i(TAG, "Response: " + response);
+    protected void onPostExecute(String responseStr) {
+        Log.i(TAG, "Response: " + responseStr);
 
-        if (response != null && !response.isEmpty()) {
-            if (response.equals(Errors.CONNECTION_PROBLEM.getCode())) {
+        if (responseStr != null && !responseStr.isEmpty()) {
+            if (responseStr.equals(Errors.CONNECTION_PROBLEM.getCode())) {
                 ToastUtils.ToastShort(mainActivity, R.string.error_connection_problem);
-            } else if (response.equals(Errors.AUTHENTICATION_FAILURE.getCode())) {
+            } else if (responseStr.equals(Errors.AUTHENTICATION_FAILURE.getCode())) {
                 ToastUtils.ToastShort(mainActivity, R.string.error_authentication_failure);
-            } else if (response.equals(Errors.GPS_DATA_NOT_FOUND.getCode())) {
+            } else if (responseStr.equals(Errors.GPS_DATA_NOT_FOUND.getCode())) {
                 ToastUtils.ToastShort(mainActivity, R.string.error_gps_data_not_found);
             } else {
                 // DATA read -> parse it to JSON
-                JSONObject lastGpsDataRead = null;
+                JSONObject responseJSON = null;
                 try {
-                    lastGpsDataRead = new JSONObject(response);
-                    JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
+                    responseJSON = new JSONObject(responseStr);
 
-                    if (addressesJSON != null) {
-                        mapFragment.addMarkers(addressesJSON);
-                        mainActivity.changeTab(R.id.mapTabId);
+                    if(responseJSON.get("data") != null) {
+                        JSONArray datesJSON = responseJSON.getJSONArray("data");
+
+                        if (datesJSON != null) {
+                            homeFragment.updateUICalendar(datesJSON);
+                        }else{
+                            ToastUtils.ToastShort(mainActivity, R.string.error_gps_dates_not_found);
+                        }
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();

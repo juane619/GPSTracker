@@ -2,6 +2,7 @@ package com.juane.arduino.gpstracker.ui.settings;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.EditText;
 
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
@@ -19,14 +20,14 @@ import java.util.Objects;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
     private static final String TAG = "SettingsFragment";
-    private SettingsViewModel settingsViewModel;
 
     private static boolean isURLValidated = false;
     private static boolean isDistanceValidated = false;
-    private static boolean isMobileValidated = false;
     private static boolean parametersEmpty = false;
 
     private EditTextPreference editTextPreferenceURL;
+    private EditTextPreference editTextPreferenceUser;
+    private EditTextPreference editTextPreferencePassword;
     private EditTextPreference editTextPreferenceDistance;
     private EditTextPreference editTextPreferenceChatId;
     private EditTextPreference editTextPreferenceMessage;
@@ -51,6 +52,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         setPreferencesFromResource(R.xml.preferences, rootKey);
 
         editTextPreferenceURL = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_url)));
+        editTextPreferenceUser = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_user)));
+        editTextPreferencePassword = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_password)));
         editTextPreferenceDistance = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_distance)));
         listPreferenceTime = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_intervalTime)));
         editTextPreferenceChatId = (EditTextPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_chatid)));
@@ -58,6 +61,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         listPreferenceSound = (ListPreference) Objects.requireNonNull(findPreference(getResources().getString(R.string.key_soundNotification)));
 
         bindSummaryValue(editTextPreferenceURL);
+        bindSummaryValue(editTextPreferenceUser);
+        bindSummaryValue(editTextPreferencePassword);
         bindSummaryValue(editTextPreferenceDistance);
         bindSummaryValue(listPreferenceTime);
         bindSummaryValue(editTextPreferenceChatId);
@@ -80,8 +85,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             parametersEmpty = false;
 
             if (stringValue.isEmpty()) {
-                Utils.showInvalidParameterDialog(getActivity(), null);
-                parametersEmpty = true;
+                //Utils.showInvalidParameterDialog(getActivity(), null);
+                //parametersEmpty = true;
                 preference.setSummary(stringValue);
                 //getActivity().findViewById(preference.getLayoutResource());
             } else {
@@ -90,39 +95,29 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     int index = listPreference.findIndexOfValue(stringValue);
                     preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
                 } else if (preference instanceof EditTextPreference) {
+                    preference.setSummary(stringValue);
+
                     if (preference.getKey().equals(getResources().getString(R.string.key_url))) { //URL
-                        preference.setSummary(stringValue);
                         // validate URL
                         try {
-                            isURLValidated = true;
                             URL url = new URL(stringValue);
+                            isURLValidated = true;
                         } catch (MalformedURLException e) {
                             //e.printStackTrace();
-                            Log.e(TAG, "Malformed URL..");
+                            Log.w(TAG, "Malformed URL..");
                             isURLValidated = false;
                             Utils.showInvalidParameterDialog(getActivity(),  "URL");
                         }
-                    } else if (preference.getKey().equals(getResources().getString(R.string.key_chatid))) { //PHONE
-                        preference.setSummary(stringValue);
-                        isMobileValidated = true;
-
-                        if (stringValue.isEmpty() || !Utils.isValidMobile(stringValue)) {
-                            Log.e(TAG, "Invalid mobile phone..");
-                            isMobileValidated = false;
-                            Utils.showInvalidParameterDialog(getActivity(), "mobile phone");
-                        }
-                    }
-                    if (preference.getKey().equals(getResources().getString(R.string.key_distance))) { //DISTANCE
-                        preference.setSummary(stringValue);
+                    } else if (preference.getKey().equals(getResources().getString(R.string.key_distance))) { //DISTANCE
                         isDistanceValidated = true;
 
-                        if (!Utils.isValidMobile(stringValue)) {
-                            if (stringValue.isEmpty() || Double.parseDouble(stringValue) < 0) {
+                            if (Double.parseDouble(stringValue) < 0) {
                                 Log.e(TAG, "Invalid distance..");
                                 isDistanceValidated = false;
                                 Utils.showInvalidParameterDialog(getActivity(), "distance");
                             }
-                        }
+                    }else if(preference.getKey().equals(getResources().getString(R.string.key_password))){
+                        preference.setSummary("******");
                     }
                 }
             }
@@ -131,7 +126,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     };
 
     public static boolean isSettingsValidated() {
-        return !parametersEmpty && isDistanceValidated && isURLValidated && isMobileValidated;
+        return !parametersEmpty && isDistanceValidated && isURLValidated;
     }
 
     private void enableAllPreferences() {

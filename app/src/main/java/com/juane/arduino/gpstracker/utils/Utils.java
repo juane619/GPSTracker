@@ -1,11 +1,16 @@
 package com.juane.arduino.gpstracker.utils;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 
 import androidx.fragment.app.FragmentActivity;
 
 import com.juane.arduino.gpstracker.R;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Utils {
 
@@ -61,4 +66,15 @@ public class Utils {
     public static boolean isValidMobile(String phone) {
         return android.util.Patterns.PHONE.matcher(phone).matches();
     }
+
+    public static String formatReadDate(Context context, LocalDateTime date){
+        String pattern = context.getResources().getString(R.string.date_read_format);
+        return DateTimeFormatter.ofPattern(pattern).format(date);
+    }
+
+    public static String formatWriteDate(Context context, LocalDateTime date){
+        String pattern = context.getResources().getString(R.string.date_write_format);
+        return DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss a").format(date);
+    }
+
 }

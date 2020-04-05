@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_generic">An error has occurred..</string>
+    <string name="error_connection_problem">Connection problem with server..</string>
+    <string name="error_authentication_failure">Authentication failure..</string>
+    <string name="error_gps_data_not_found">"No GPS data found.."..</string>
+    <string name="error_gps_dates_not_found">No dates found..</string>
+    <string name="error_permission_required_toast">Permission is required..</string>
+    <string name="error_malformed_url">Permission is required..</string>
+</resources>

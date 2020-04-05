@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -17,7 +18,6 @@ import android.os.Messenger;
 import android.os.Process;
 import android.os.RemoteException;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -26,20 +26,18 @@ import androidx.preference.PreferenceManager;
 import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
+import com.juane.arduino.gpstracker.utils.Errors;
 import com.juane.arduino.gpstracker.utils.HttpUtils;
+import com.juane.arduino.gpstracker.utils.ToastUtils;
 import com.juane.arduino.gpstracker.utils.URLConstants;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Authenticator;
-import java.net.HttpURLConnection;
-import java.net.PasswordAuthentication;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
 
@@ -107,7 +105,7 @@ public class RequestService extends Service {
         // start ID so we know which request we're stopping when we finish the job
 
         //When previous resources are avalaible, service start
-        Toast.makeText(this, "Request Service starting..", Toast.LENGTH_SHORT).show();
+        ToastUtils.ToastShort(this, R.string.info_started_realtime);
 
         isRunning = true;
 
@@ -117,7 +115,7 @@ public class RequestService extends Service {
 
     @Override
     public void onDestroy() {
-        Toast.makeText(this, "Request service stopped..", Toast.LENGTH_SHORT).show();
+        ToastUtils.ToastShort(this, R.string.info_stopped_realtime);
         isRunning = false;
 
 //        try {
@@ -170,7 +168,7 @@ public class RequestService extends Service {
         public void handleMessage(@NonNull Message msg) {
             //Log.i(TAG, "RECIBIENDO MENSAJE DEL FRAGMENT..: " + msg.arg2);
 
-            switch(msg.what){
+            switch (msg.what) {
                 case MessageType.REGISTER_CLIENT:
                     Log.i(TAG, "RECEIVING REGISTER MSG..");
                     mClient = msg.replyTo;
@@ -189,99 +187,135 @@ public class RequestService extends Service {
                     String dateSelected = (String) msg.obj;
                     Log.i(TAG, "Date selected: " + dateSelected);
 
+                    String urlPreference = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(getResources().getString(R.string.key_url), "agrocarvajal.com");
+
+                    String user = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(getResources().getString(R.string.key_user), "juane619");
+                    String passwd = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(getResources().getString(R.string.key_password), "");
+
                     while (isRunning) {
                         try {
-                            String urlStr = URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
+                            // Notice user when searching GPS data
+                            if (failCounter > 2) {
+                                failCounter = 0;
 
-                            if(dateSelected != null){
+                                if (mClient != null) {
+                                    mClient.send(Message.obtain(null, MessageType.SHOW_TOAST, Errors.SEARCHING_GPS.getCode()));
+                                }
+                            }
+                            StringBuffer response = new StringBuffer();
+
+                            String urlStr = urlPreference + File.separator + URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
+
+                            if (dateSelected != null) {
                                 urlStr = urlStr + "?" + URLConstants.DATE_PARAMETER + "=" + dateSelected;
                             }
+                            try {
+                                URL serverURL = new URL(urlStr);
+                                response = HttpUtils.doGet(serverURL, true, user, passwd);
+                            } catch (SecurityException e) {
+                                Log.w(TAG, "Security exception " + e.getMessage());
 
-                            URL url = new URL(urlStr);
+                                response.append(Errors.AUTHENTICATION_FAILURE.getCode());
+                            } catch (Resources.NotFoundException e) {
+                                Log.w(TAG, "Problem connection exception..");
 
-                            // LOGIC of request GPS service
-                            if (lastDirection == null || !lastDirection.isValid()) { //first time read: read main file
-                                Log.i(TAG, "FIRST TIME switch: ");
+                                response.append(Errors.GPS_DATA_NOT_FOUND.getCode());
+                            } catch (MalformedURLException e) {
+                                Log.w(TAG, "Problem with URL..");
 
-                                StringBuffer response = null;
-                                try {
-                                   response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
-                                }catch(IOException e){
-                                    Log.w(TAG, "NO GPS data found for day: " + dateSelected);
+                                response.append(Errors.BAD_URL.getCode());
+                            } catch (IOException e) {
+                                Log.w(TAG, "Problem connection exception..");
 
-                                    failCounter++;
+                                response.append(Errors.CONNECTION_PROBLEM.getCode());
+                            }
 
-                                    if(failCounter > 3){
-                                        failCounter = 0;
+                            if (response != null && response.length() > 0) {
+                                String responseStr = response.toString();
 
-                                        if (mClient != null) {
-                                            mClient.send(Message.obtain(null, MessageType.SHOW_TOAST, "NO GPS data found"));
-                                        }
+                                if (responseStr.equals(Errors.AUTHENTICATION_FAILURE.getCode())) {
+                                    Log.w(TAG, "Authentication failure: ");
+
+                                    if (mClient != null) {
+                                        mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP, Errors.AUTHENTICATION_FAILURE.getCode()));
                                     }
-                                }
+                                    break;
+                                } else if (responseStr.equals(Errors.CONNECTION_PROBLEM.getCode())) {
+                                    Log.w(TAG, "Connection problem: ");
 
-                                if (response != null) {
-                                    Log.i(TAG, "Content from server: " + response.length());
+                                    if (mClient != null) {
+                                        mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP, Errors.CONNECTION_PROBLEM.getCode()));
+                                    }
+                                    break;
+                                } else if (responseStr.equals(Errors.GPS_DATA_NOT_FOUND.getCode())) {
+                                    // if not gps data found, try more times and raise user advise
+                                    Log.w(TAG, "GPS data not found: ");
 
-                                    // DATA read -> parse it to JSON
-                                    JSONObject lastGpsDataRead = new JSONObject(response.toString());
-                                    JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
+                                    if (mClient != null) {
+                                        mClient.send(Message.obtain(null, MessageType.SHOW_TOAST, Errors.GPS_DATA_NOT_FOUND.getCode()));
+                                    }
+                                } else if (responseStr.equals(Errors.BAD_URL.getCode())) {
+                                    Log.w(TAG, "URL malformed: ");
 
-                                    JSONObject lastDirectionRAW = addressesJSON.getJSONObject(addressesJSON.length() - 1);
-                                    lastDirection = new GPSDirection(lastDirectionRAW, getApplicationContext());
+                                    if (mClient != null) {
+                                        mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP, Errors.BAD_URL.getCode()));
+                                    }
+                                    break;
+                                } else { // No problems at read from server
+                                    // LOGIC of request GPS service
+                                    if (lastDirection == null || !lastDirection.isValid()) { //first time read: read main file
+                                        Log.i(TAG, "FIRST TIME switch: ");
+                                        // DATA read -> parse it to JSON
+                                        JSONObject lastGpsDataRead = new JSONObject(responseStr);
+                                        JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
 
-                                    if (lastDirection.isValid()) {
-                                        //Log.i(TAG, "Direction: " + lastDirection.toString());
-                                        try {
+                                        JSONObject lastDirectionRAW = addressesJSON.getJSONObject(addressesJSON.length() - 1);
+                                        lastDirection = new GPSDirection(lastDirectionRAW, getApplicationContext());
+
+                                        if (lastDirection.isValid()) {
+                                            //Log.i(TAG, "Direction: " + lastDirection.toString());
                                             if (mClient != null) {
                                                 // sending msg to client (homeFragment)
                                                 mClient.send(Message.obtain(null, MessageType.SENDING_LOCATION, MessageType.FIRST_TIME_SWITCH, -1, addressesJSON));
                                             }
-                                        } catch (RemoteException ex) {
-                                            ex.printStackTrace();
+                                        }
+                                    } else { //next reads
+                                        Log.i(TAG, "SECOND OR MORE times switch: ");
+
+                                        JSONObject lastGpsDataRead = new JSONObject(responseStr);
+                                        JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
+
+                                        JSONObject lastDirectionRAW = addressesJSON.getJSONObject(addressesJSON.length() - 1);
+                                        GPSDirection auxDirection = new GPSDirection(lastDirectionRAW, getApplicationContext());
+
+                                        if (auxDirection.isValid()) {
+                                            // two locations already read, compare and work.
+                                            if (!lastDirection.isEqual(auxDirection)) {
+                                                Log.i(TAG, "MOVING!!!!");
+
+                                                try {
+                                                    if (mClient != null) {
+                                                        mClient.send(Message.obtain(null, MessageType.SENDING_LOCATION, auxDirection));
+                                                    }
+                                                } catch (RemoteException ex) {
+                                                    ex.printStackTrace();
+                                                }
+
+                                                lastDirection = auxDirection;
+                                            } else {
+                                                Log.i(TAG, "Directions equal..");
+                                                failCounter++;
+                                            }
+                                        } else {
+                                            Log.w(TAG, "Aux Direction not valid..");
                                         }
                                     }
                                 }
-                            } else { //next reads
-                                Log.i(TAG, "SECOND OR MORE times switch: ");
-                                StringBuffer response = HttpUtils.doGet(url, true, "juane619", "Mygpstracker1!");
+                            } else {
+                                Log.w(TAG, "Problem reading second one..");
 
-                                if (response != null) {
-                                    Log.i(TAG, "Content from server: " + response.length());
-
-                                    JSONObject lastGpsDataRead = new JSONObject(response.toString());
-                                    JSONArray addressesJSON = lastGpsDataRead.getJSONArray("addresses");
-
-                                    JSONObject lastDirectionRAW = addressesJSON.getJSONObject(addressesJSON.length() - 1);
-                                    GPSDirection auxDirection = new GPSDirection(lastDirectionRAW, getApplicationContext());
-
-                                    if (auxDirection.isValid()) {
-                                        // two locations already read, compare and work.
-                                        if (!lastDirection.isEqual(auxDirection)) {
-                                            Log.i(TAG, "MOVING!!!!");
-
-                                            try {
-                                                if (mClient != null) {
-                                                    mClient.send(Message.obtain(null, MessageType.SENDING_LOCATION, auxDirection));
-                                                }
-                                            } catch (RemoteException ex) {
-                                                ex.printStackTrace();
-                                            }
-
-                                            lastDirection = auxDirection;
-                                        } else {
-                                            Log.i(TAG, "Directions equal..");
-                                        }
-
-                                    } else {
-                                        Log.w(TAG, "Aux Direction not valid..");
-                                    }
-                                } else {
-                                    Log.w(TAG, "Problem reading second one..");
-
-                                    if (mClient != null) {
-                                        mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP));
-                                    }
+                                if (mClient != null) {
+                                    mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP));
                                 }
                             }
 
@@ -289,15 +323,7 @@ public class RequestService extends Service {
                         } catch (InterruptedException e) {
                             // Restore interrupt status.
                             Thread.currentThread().interrupt();
-                        } catch (IOException e) {
-                            Log.e(TAG, "IO Exception server request?.." + Objects.requireNonNull(e.getLocalizedMessage()));
-                            try {
-                                mClient.send(Message.obtain(null, MessageType.PROBLEM_STOP));
-                            } catch (RemoteException ex) {
-                                ex.printStackTrace();
-                            }
-                            //e.printStackTrace();
-                        } catch (JSONException e) {
+                        }  catch (JSONException e) {
                             Log.e(TAG, "ERROR parsing data to JSON format..");
                             //e.printStackTrace();
                         } catch (RemoteException e) {
@@ -309,7 +335,8 @@ public class RequestService extends Service {
 
                 case MessageType.UNREGISTER_CLIENT:
                     Log.i(TAG, "Unregistering client..");
-                    mClient = null;
+                    mClient = null; //right now not useful, if many clients yes
+                    break;
                 default:
                     Log.w(TAG, "UNHANDLED MESSAGE RECEIVED..");
             }

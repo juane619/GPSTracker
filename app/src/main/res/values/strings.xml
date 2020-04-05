@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">GPSTracker</string>
-    <string name="enable_text">Enable</string>
+    <string name="enable_text">Realtime</string>
     <string name="sound_notification_text">Sound notifications</string>
     <string name="telegram_notification_text">Telegram notifications</string>
     <string name="show_locations_text">Show locations</string>
@@ -18,14 +18,24 @@
     <string name="button_dialog_ok">OK</string>
     <string name="dialog_title_service_running">Service is running</string>
     <string name="location_permission_denied">Location permission denied</string>
-    <string name="permission_required_toast">Permission is required..</string>
+
     <string name="permission_rationale_location">Permission rationale location</string>
     <string name="add_ringtone_text">Choose ringtone</string>
     <string name="key_soundNotification">sound_notification</string>
     <string name="default_url_server">http://www.agrocarvajal.com</string>
     <string name="text_filter_day">Filter by day</string>
-    <string name="key_user" />
-    <string name="key_password" />
+    <string name="key_user">key_user</string>
+    <string name="key_password">key_password</string>
     <string name="default_user_server">juane619</string>
+    <string name="text_notifications">Notifications</string>
 
+    <string name="info_service_disconnected">Service disconnected..</string>
+    <string name="info_started_realtime">Realtime started..</string>
+    <string name="info_stopped_realtime">Realtime stopped..</string>
+    <string name="info_searching_gps">Searching GPS data..</string>
+
+    <string name="date_read_format">YYYYMMdd</string>
+    <string name="date_write_format">dd/MM/yyyy - hh:mm:ss a</string>
+
+    <string name="UI_updated_text">Calendar updated at: </string>
 </resources>

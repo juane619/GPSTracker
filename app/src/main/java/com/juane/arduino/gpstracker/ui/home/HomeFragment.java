@@ -22,22 +22,24 @@ import android.widget.Button;
 import android.widget.CalendarView;
 import android.widget.CompoundButton;
 import android.widget.Switch;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.datepicker.MaterialDatePicker;
 import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.service.MessageType;
-import com.juane.arduino.gpstracker.service.RequestGps;
+import com.juane.arduino.gpstracker.service.RequestGpsDates;
 import com.juane.arduino.gpstracker.service.RequestService;
-import com.juane.arduino.gpstracker.telegram.TelegramBot;
+import com.juane.arduino.gpstracker.service.telegram.TelegramBot;
 import com.juane.arduino.gpstracker.ui.map.MapFragment;
 import com.juane.arduino.gpstracker.ui.settings.SettingsFragment;
+import com.juane.arduino.gpstracker.utils.Errors;
+import com.juane.arduino.gpstracker.utils.ToastUtils;
 import com.juane.arduino.gpstracker.utils.URLConstants;
 import com.juane.arduino.gpstracker.utils.Utils;
 
@@ -45,34 +47,60 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
+    private final Messenger mMessenger = new Messenger(new IncomingHandler());
+    private MainActivity mainActivity;
+    private String dateSelected;
 
-    MainActivity mainActivity;
     private MapFragment mapFragment;
-
     private Switch enableSwitch;
     private Switch soundNotificationsSwitch;
     private Switch telegramNotificationsSwitch;
     private Button showLocationButton;
-    private CalendarView calendarView;
+    private Button reloadButton;
+    MaterialDatePicker.Builder<Long> builder;
+    private TextView updatedText;
 
     // Request service attributes
     private boolean mIsBound;
     private Intent intentRequestService;
     private Messenger mService = null;
-    private final Messenger mMessenger = new Messenger(new IncomingHandler());
-
     private Ringtone ringtoneNotification;
-    String dateSelected;
-    DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyyMMdd");
+    // callbacks when bind with request gps service
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = new Messenger(service);
+            //Toast.makeText(getActivity(), "Attached..", Toast.LENGTH_SHORT).show();
 
+            try {
+                Message msg = Message.obtain(null, MessageType.REGISTER_CLIENT);
+                msg.replyTo = mMessenger;
+
+                // From switch, pass today parsed date
+                dateSelected = Utils.formatReadDate(getContext(), LocalDateTime.now());
+
+                msg.obj = dateSelected;
+
+                mService.send(msg);
+            } catch (RemoteException e) {
+                // In this case the service has crashed before we could even do anything with it
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
+            mService = null;
+            ToastUtils.ToastShort(mainActivity, R.string.info_service_disconnected);
+        }
+    };
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -87,13 +115,15 @@ public class HomeFragment extends Fragment {
         soundNotificationsSwitch = root.findViewById(R.id.soundNotifications);
         telegramNotificationsSwitch = root.findViewById(R.id.telegramNotifications);
         showLocationButton = root.findViewById(R.id.showLocationButton);
-        calendarView = root.findViewById(R.id.calendarView2);
+        reloadButton = root.findViewById(R.id.reload_button);
+        updatedText = root.findViewById(R.id.updatedCalendarText);
 
         setEnableSwitch();
         setSoundNotificationsSwitch();
         setTelegramNotificationsSwitch();
         setShowLocationButton();
-        setCalendarView();
+        setReloadButton();
+        setDatePicker();
 
         intentRequestService = new Intent(getActivity(), RequestService.class);
 
@@ -128,34 +158,6 @@ public class HomeFragment extends Fragment {
             Log.e(TAG, "Failed to unbind from the service", t);
         }
     }
-
-    // callbacks when bind with request gps service
-    private ServiceConnection mConnection  = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            mService = new Messenger(service);
-            //Toast.makeText(getActivity(), "Attached..", Toast.LENGTH_SHORT).show();
-
-            try {
-                Message msg = Message.obtain(null, MessageType.REGISTER_CLIENT);
-                msg.replyTo = mMessenger;
-
-                // From switch, pass today parsed date
-                dateSelected = dateFormat.format(LocalDate.now());
-
-                msg.obj = dateSelected;
-
-                mService.send(msg);
-            } catch (RemoteException e) {
-                // In this case the service has crashed before we could even do anything with it
-            }
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            // This is called when the connection with the service has been unexpectedly disconnected - process crashed.
-            mService = null;
-            Toast.makeText(getActivity(), "Service disconnected..", Toast.LENGTH_SHORT).show();
-        }
-    };
 
     private void setEnableSwitch() {
         enableSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -212,6 +214,8 @@ public class HomeFragment extends Fragment {
 
     //// Setting behaviour of root view components
     private void setSoundNotificationsSwitch() {
+        soundNotificationsSwitch.setChecked(true);
+
         soundNotificationsSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -237,38 +241,102 @@ public class HomeFragment extends Fragment {
         });
     }
 
+    private void setReloadButton(){
+        reloadButton.setOnClickListener(new View.OnClickListener(){
+            @SuppressLint("ResourceType")
+            @Override
+            public void onClick(View v) {
+                //updateValidDates();
+                updateCalendar();
+            }
+        });
+    }
+
     private void setShowLocationButton() {
-        showLocationButton.setOnClickListener(new View.OnClickListener() {
+        showLocationButton.setOnClickListener(new View.OnClickListener(){
+            @SuppressLint("ResourceType")
+            @Override
+            public void onClick(View v) {
+                MaterialDatePicker<Long> mat = builder.setSelection(LocalDateTime.now().atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli()).build();
+                mat.show(getFragmentManager(), mat.toString());
+            }
+        });
+
+       /* showLocationButton.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
                 mapFragment.clearMarkers();
 
-                if(dateSelected != null) {
-                    String urlStr = URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
+                if (dateSelected != null) {
+                    String server = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_url), "agrocarvajal.com");
+                    String urlStr = server + File.separator + URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
                     urlStr = urlStr + "?" + URLConstants.DATE_PARAMETER + "=" + dateSelected;
-                    mapFragment.setSelectedDayTextView(dateSelected);
-                    new RequestGps(mainActivity, mapFragment).execute(urlStr);
 
-                   // mainActivity.changeTab(R.id.mapTabId);
+                    String user = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_user), "juane619");
+                    String passwd = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_password), "");
+
+                    new RequestGps(mainActivity, mapFragment).execute(urlStr, String.valueOf(true), user, passwd);
+                    mapFragment.setSelectedDayTextView(dateSelected);
+
                 }
             }
-        });
+        });*/
     }
 
-    private void setCalendarView() {
-        dateSelected = dateFormat.format(LocalDate.now());
+    private void setUpdatedText(String dateFormatted) {
+        updatedText.setText(getResources().getString(R.string.UI_updated_text) + " " + dateFormatted);
+    }
+
+    private void setDatePicker() {
+        LocalDateTime localDateNow = LocalDateTime.now();
+        String dateFormatted = Utils.formatWriteDate(getContext(), localDateNow);
+        setUpdatedText(dateFormatted);
+        dateSelected = Utils.formatReadDate(getContext(), localDateNow);
+
+        builder = MaterialDatePicker.Builder.datePicker();
+        builder.setTitleText("Days with GPS data");
+    }
+
+    /*private void setCalendarView() {
+        dateSelected = Utils.formatDate(getContext(), date);
+
+        mat.set
 
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
             @Override
             public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
                 LocalDate date = LocalDate.of(year, month + 1, dayOfMonth);
-                dateSelected = dateFormat.format(date);
+                dateSelected = Utils.formatDate(view.getContext(), date);
             }
         });
-    }
+    }*/
 
     //// END Setting behaviour of root view components
+
+    private void updateCalendar() {
+        LocalDateTime localDateNow = LocalDateTime.now();
+        String dateFormatted = Utils.formatWriteDate(getContext(), localDateNow);
+        setUpdatedText(dateFormatted);
+
+        updateValidDates();
+    }
+
+    private void updateValidDates() {
+        String server = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_url), "agrocarvajal.com");
+        String urlStr = server + File.separator + URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_DATES_ENDPOINT;
+
+        String user = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_user), "juane619");
+        String passwd = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_password), "");
+
+        new RequestGpsDates(mainActivity, this).execute(urlStr, String.valueOf(true), user, passwd);
+    }
+
+    public void updateUICalendar(JSONArray dates){
+        for (int i = 0; i < dates.length(); i++) {
+
+        }
+    }
 
     private boolean doBindService() {
         if (!mIsBound) {
@@ -311,6 +379,20 @@ public class HomeFragment extends Fragment {
                 case MessageType.PROBLEM_STOP:
                     Log.i(TAG, "REQUEST TO STOP..");
                     enableSwitch.setChecked(false);
+                case MessageType.SHOW_TOAST:
+                    String error = (msg.obj instanceof String) ? (String) msg.obj : null;
+
+                    if (error.equals(Errors.AUTHENTICATION_FAILURE.getCode())) {
+                        ToastUtils.ToastShort(mainActivity, R.string.error_authentication_failure);
+                    } else if (error.equals(Errors.CONNECTION_PROBLEM.getCode())) {
+                        ToastUtils.ToastShort(mainActivity, R.string.error_generic);
+                    } else if (error.equals(Errors.GPS_DATA_NOT_FOUND.getCode())) {
+                        ToastUtils.ToastShort(mainActivity, R.string.error_gps_data_not_found);
+                    } else if (error.equals(Errors.BAD_URL.getCode())) {
+                        ToastUtils.ToastShort(mainActivity, R.string.error_malformed_url);
+                    } else if (error.equals(Errors.SEARCHING_GPS.getCode())) {
+                        ToastUtils.ToastShort(mainActivity, R.string.info_searching_gps);
+                    }
                     break;
                 case MessageType.START_REQUEST:
                     Log.i(TAG, "REQUEST TO START..");
@@ -334,7 +416,7 @@ public class HomeFragment extends Fragment {
                         // FIRST time switch: receive complete JSON locations to print all previous locations
                         Log.i(TAG, "FIRST TIME SWITCH..");
 
-                        addressesJSON = (JSONArray) msg.obj;
+                        addressesJSON = msg.obj instanceof JSONArray ? (JSONArray) msg.obj : null;
 
                         if (addressesJSON != null) {
                             try {
@@ -350,35 +432,34 @@ public class HomeFragment extends Fragment {
                         // SECOND OR MORE time switch: receive only last device location
                         Log.i(TAG, "SECOND OF MORE SWITCH..");
 
-                        gpsRead = (GPSDirection) msg.obj;
+                        gpsRead = msg.obj instanceof GPSDirection ? (GPSDirection) msg.obj : null;
                         Log.i(TAG, "New location: " + gpsRead.toString());
 
                         //update map
                         if (mapFragment != null) {
                             mapFragment.addMarker(gpsRead);
-                        }
-
-                        // send telegram msg
-                        if (telegramNotificationsSwitch.isChecked()) {
-                            String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
-                            String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
-
-                            new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
-                        }
-
-                        // add sound notification when location arrives
-                        try {
-                            if (soundNotificationsSwitch.isChecked())
-                                ringtoneNotification.play();
-                        } catch (Exception e) {
-                            Log.e(TAG, "Problem playing sound notification");
+                            mainActivity.changeTab(R.id.mapTabId);
                         }
                     }
 
+                    // send telegram msg
+                    if (telegramNotificationsSwitch.isChecked()) {
+                        String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
+                        String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
+
+                        new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
+                    }
+
+                    // add sound notification when location arrives
+                    try {
+                        if (soundNotificationsSwitch.isChecked())
+                            ringtoneNotification.play();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Problem playing sound notification");
+                    }
+
                     break;
-                case MessageType.SHOW_TOAST:
-                    Toast.makeText(mainActivity, (String) msg.obj, Toast.LENGTH_SHORT).show();
-                    break;
+
                 default:
                     Log.w(TAG, "UNHANDLED MESSAGE RECEIVED..");
             }

@@ -92,8 +92,7 @@ public abstract class PermissionsUtils {
         public void onDismiss(@NonNull DialogInterface dialog) {
             super.onDismiss(dialog);
             if (mFinishActivity) {
-                Toast.makeText(getActivity(), R.string.permission_required_toast,
-                        Toast.LENGTH_SHORT).show();
+                ToastUtils.ToastShort(getActivity(), R.string.error_permission_required_toast);
                 Objects.requireNonNull(getActivity()).finish();
             }
         }
@@ -162,10 +161,7 @@ public abstract class PermissionsUtils {
         public void onDismiss(@NonNull DialogInterface dialog) {
             super.onDismiss(dialog);
             if (mFinishActivity) {
-                Toast.makeText(getActivity(),
-                        R.string.permission_required_toast,
-                        Toast.LENGTH_SHORT)
-                        .show();
+                ToastUtils.ToastShort(getActivity(), R.string.error_permission_required_toast);
                 Objects.requireNonNull(getActivity()).finish();
             }
         }

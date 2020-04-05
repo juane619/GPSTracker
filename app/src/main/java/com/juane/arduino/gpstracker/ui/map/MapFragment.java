@@ -17,6 +17,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -34,8 +35,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButtonClickListener,
-        GoogleMap.OnMyLocationClickListener, OnMapReadyCallback {
+public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButtonClickListener, OnMapReadyCallback {
     private static final String TAG = "MapFragment";
 
     private GoogleMap mMap;
@@ -94,20 +94,26 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
     * @param gpsReads: JSON array of locations
     */
     public void addMarkers(JSONArray gpsReads) throws JSONException {
-        if(gpsReads != null) {
+        if(gpsReads != null && gpsReads.length()>0) {
             //JSONObject lastDirectionRAW, currentDirectionRAW;
             GPSDirection lastGpsRead, currentGpsRead;
 
             lastGpsRead = new GPSDirection(gpsReads.getJSONObject(0), getActivity().getApplicationContext());
+            addMarker(lastGpsRead);
 
-            for (int i = 1; i < gpsReads.length() - 1; i++) {
-                currentGpsRead = new GPSDirection(gpsReads.getJSONObject(i), getActivity().getApplicationContext());
+            if(gpsReads.length() > 1) {
+                for (int i = 1; i < gpsReads.length() - 1; i++) {
+                    currentGpsRead = new GPSDirection(gpsReads.getJSONObject(i), getActivity().getApplicationContext());
 
-                if (!currentGpsRead.isEqual(lastGpsRead)) {
-                    addMarker(currentGpsRead);
+                    if (!currentGpsRead.isEqual(lastGpsRead)) {
+                        addMarker(currentGpsRead);
+                        lastGpsRead = new GPSDirection(gpsReads.getJSONObject(i), getActivity().getApplicationContext());
+                    }
+
+
                 }
-
-                lastGpsRead = new GPSDirection(gpsReads.getJSONObject(i), getActivity().getApplicationContext());
+            }else{
+                addMarker(lastGpsRead);
             }
         }
     }
@@ -149,14 +155,9 @@ public class MapFragment extends Fragment implements GoogleMap.OnMyLocationButto
 
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(getContext(), "Moving to your location..", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getContext(), "Moving to your location..", Toast.LENGTH_SHORT).show();
 
         return false;
-    }
-
-    @Override
-    public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(getContext(), "Current location:\n" + location, Toast.LENGTH_LONG).show();
     }
 
     public void setSelectedDayTextView(String daySelected){
