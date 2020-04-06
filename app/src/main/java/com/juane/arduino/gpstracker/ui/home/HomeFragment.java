@@ -19,7 +19,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CalendarView;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -28,11 +27,15 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.datepicker.MaterialPickerOnPositiveButtonClickListener;
 import com.juane.arduino.gpstracker.MainActivity;
 import com.juane.arduino.gpstracker.R;
+import com.juane.arduino.gpstracker.datepicker.WeekDayValidator;
 import com.juane.arduino.gpstracker.gps.GPSDirection;
 import com.juane.arduino.gpstracker.service.MessageType;
+import com.juane.arduino.gpstracker.service.RequestGps;
 import com.juane.arduino.gpstracker.service.RequestGpsDates;
 import com.juane.arduino.gpstracker.service.RequestService;
 import com.juane.arduino.gpstracker.service.telegram.TelegramBot;
@@ -47,6 +50,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.File;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -57,16 +61,16 @@ import java.util.Objects;
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
     private final Messenger mMessenger = new Messenger(new IncomingHandler());
+    MaterialDatePicker.Builder<Long> builder;
+    MaterialDatePicker<Long> mat;
     private MainActivity mainActivity;
     private String dateSelected;
-
     private MapFragment mapFragment;
     private Switch enableSwitch;
     private Switch soundNotificationsSwitch;
     private Switch telegramNotificationsSwitch;
     private Button showLocationButton;
     private Button reloadButton;
-    MaterialDatePicker.Builder<Long> builder;
     private TextView updatedText;
 
     // Request service attributes
@@ -241,47 +245,27 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    private void setReloadButton(){
-        reloadButton.setOnClickListener(new View.OnClickListener(){
+    private void setReloadButton() {
+        reloadButton.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
-                //updateValidDates();
-                updateCalendar();
+                //requestValidDates();
+                updateValidDatesCalendar();
             }
         });
     }
 
     private void setShowLocationButton() {
-        showLocationButton.setOnClickListener(new View.OnClickListener(){
+        showLocationButton.setOnClickListener(new View.OnClickListener() {
             @SuppressLint("ResourceType")
             @Override
             public void onClick(View v) {
-                MaterialDatePicker<Long> mat = builder.setSelection(LocalDateTime.now().atZone(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli()).build();
-                mat.show(getFragmentManager(), mat.toString());
-            }
-        });
-
-       /* showLocationButton.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("ResourceType")
-            @Override
-            public void onClick(View v) {
-                mapFragment.clearMarkers();
-
-                if (dateSelected != null) {
-                    String server = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_url), "agrocarvajal.com");
-                    String urlStr = server + File.separator + URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
-                    urlStr = urlStr + "?" + URLConstants.DATE_PARAMETER + "=" + dateSelected;
-
-                    String user = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_user), "juane619");
-                    String passwd = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_password), "");
-
-                    new RequestGps(mainActivity, mapFragment).execute(urlStr, String.valueOf(true), user, passwd);
-                    mapFragment.setSelectedDayTextView(dateSelected);
-
+                if (mat != null) {
+                    mat.show(getFragmentManager(), mat.toString());
                 }
             }
-        });*/
+        });
     }
 
     private void setUpdatedText(String dateFormatted) {
@@ -296,33 +280,23 @@ public class HomeFragment extends Fragment {
 
         builder = MaterialDatePicker.Builder.datePicker();
         builder.setTitleText("Days with GPS data");
+
+        requestValidDates();
+
+
     }
-
-    /*private void setCalendarView() {
-        dateSelected = Utils.formatDate(getContext(), date);
-
-        mat.set
-
-        calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
-            @Override
-            public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
-                LocalDate date = LocalDate.of(year, month + 1, dayOfMonth);
-                dateSelected = Utils.formatDate(view.getContext(), date);
-            }
-        });
-    }*/
 
     //// END Setting behaviour of root view components
 
-    private void updateCalendar() {
+    private void updateValidDatesCalendar() {
         LocalDateTime localDateNow = LocalDateTime.now();
         String dateFormatted = Utils.formatWriteDate(getContext(), localDateNow);
         setUpdatedText(dateFormatted);
 
-        updateValidDates();
+        requestValidDates();
     }
 
-    private void updateValidDates() {
+    private void requestValidDates() {
         String server = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_url), "agrocarvajal.com");
         String urlStr = server + File.separator + URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_DATES_ENDPOINT;
 
@@ -332,10 +306,46 @@ public class HomeFragment extends Fragment {
         new RequestGpsDates(mainActivity, this).execute(urlStr, String.valueOf(true), user, passwd);
     }
 
-    public void updateUICalendar(JSONArray dates){
-        for (int i = 0; i < dates.length(); i++) {
+    public void updateUICalendar(JSONArray dates) throws JSONException {
+        if (dates != null && dates.length() > 0) {
+            CalendarConstraints.Builder b = new CalendarConstraints.Builder();
+            b.setValidator(new WeekDayValidator(dates));
 
+            builder.setCalendarConstraints(b.build());
+
+            LocalDate localDate = LocalDate.parse(dates.getString(dates.length() - 1), DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            builder.setSelection(localDate.atStartOfDay(ZoneId.ofOffset("UTC", ZoneOffset.UTC)).toInstant().toEpochMilli());
+            mat = builder.build();
+
+            addOnMaterialPickerPositiveButton(mat);
         }
+    }
+
+    private void addOnMaterialPickerPositiveButton(MaterialDatePicker<Long> mat) {
+        mat.addOnPositiveButtonClickListener(new MaterialPickerOnPositiveButtonClickListener<Long>() {
+            @Override
+            public void onPositiveButtonClick(Long selection) {
+                mapFragment.clearMarkers();
+                LocalDateTime date = Instant.ofEpochMilli(selection).atZone(ZoneId.systemDefault()).toLocalDateTime();
+                dateSelected = Utils.formatReadDate(getContext(), date);
+
+                if (dateSelected != null) {
+                    requestGps();
+                    mapFragment.setSelectedDayTextView(dateSelected);
+                }
+            }
+        });
+    }
+
+    private void requestGps() {
+        String server = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_url), "agrocarvajal.com");
+        String urlStr = server + File.separator + URLConstants.URL_GPS_DIRECTORY + File.separator + URLConstants.URL_READ_GPS_ENDPOINT;
+        urlStr = urlStr + "?" + URLConstants.DATE_PARAMETER + "=" + dateSelected;
+
+        String user = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_user), "juane619");
+        String passwd = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_password), "");
+
+        new RequestGps(mainActivity, mapFragment).execute(urlStr, String.valueOf(true), user, passwd);
     }
 
     private boolean doBindService() {
@@ -443,21 +453,22 @@ public class HomeFragment extends Fragment {
                     }
 
                     // send telegram msg
-                    if (telegramNotificationsSwitch.isChecked()) {
-                        String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
-                        String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
+                    if (gpsRead != null) {
+                        if (telegramNotificationsSwitch.isChecked()) {
+                            String chatId = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_chatid), "chat_id");
+                            String message = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString(getResources().getString(R.string.key_message), "message_text");
 
-                        new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
+                            new TelegramBot(getActivity().getString(R.string.telegram_bot_key)).execute(chatId, message + ":\n" + gpsRead.toString());
+                        }
+
+                        // add sound notification when location arrives
+                        try {
+                            if (soundNotificationsSwitch.isChecked())
+                                ringtoneNotification.play();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Problem playing sound notification");
+                        }
                     }
-
-                    // add sound notification when location arrives
-                    try {
-                        if (soundNotificationsSwitch.isChecked())
-                            ringtoneNotification.play();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Problem playing sound notification");
-                    }
-
                     break;
 
                 default:

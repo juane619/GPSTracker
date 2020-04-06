@@ -3,7 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#009C6464"
+    android:backgroundTint="#00A25959"
+    android:backgroundTintMode="multiply">
 
     <TextView
         android:id="@+id/NotificationsTextView"
@@ -21,14 +24,14 @@
         android:layout_width="360dp"
         android:layout_height="30dp"
         android:layout_marginStart="28dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="32dp"
         android:switchMinWidth="65dp"
         android:text="@string/enable_text"
         android:textSize="@dimen/textElements"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/titleHome" />
 
     <Switch
         android:id="@+id/soundNotifications"
@@ -106,5 +109,18 @@
         android:textSize="11sp"
         app:layout_constraintStart_toEndOf="@+id/reload_button"
         app:layout_constraintTop_toBottomOf="@+id/filterDayTextView" />
+
+    <TextView
+        android:id="@+id/titleHome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="GPSTracker"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="48sp"
+        android:textStyle="bold|italic"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
